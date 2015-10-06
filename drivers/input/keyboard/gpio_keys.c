@@ -977,7 +977,7 @@ static int gpio_keys_probe(struct platform_device *pdev)
 
 	for (i = 0; i < pdata->nbuttons; i++) {
 		struct gpio_button_data *bdata = &ddata->data[i];
-		char *code_name;
+        char *code_name = NULL;
 
 		if (bdata->button->code == KEY_POWER)
 			code_name = "POWER_KEY";
