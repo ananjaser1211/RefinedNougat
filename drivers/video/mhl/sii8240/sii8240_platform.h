@@ -1,7 +1,7 @@
 
 #include <linux/i2c.h>
 #include <linux/sii8240.h>
-#include "../../video/edid.h"
+#include "../../../video/edid.h"
 
 struct sii8240_platform_data *platform_init_data(struct i2c_client *client);
 /*
