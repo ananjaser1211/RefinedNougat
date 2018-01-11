@@ -8,7 +8,7 @@ export CROSS_COMPILE=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
 # Cleanup
 make clean && make mrproper
 # N910C_NN Config
-make 
+make trelte_00_defconfig
 make exynos5433-tre_eur_open_07.dtb
 make exynos5433-tre_eur_open_08.dtb
 make exynos5433-tre_eur_open_09.dtb
