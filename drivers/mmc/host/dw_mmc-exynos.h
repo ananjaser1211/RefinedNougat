@@ -66,7 +66,6 @@ struct dw_mci_exynos_priv_data {
 #define DW_MMC_EXYNOS_USE_FINE_TUNING		BIT(0)
 #define DW_MMC_EXYNOS_BYPASS_FOR_ALL_PASS	BIT(1)
 #define DW_MMC_EXYNOS_ENABLE_SHIFT		BIT(2)
-#define DW_MMC_EXYNOS_IGNORE_LV1		BIT(3)
 };
 
 /*

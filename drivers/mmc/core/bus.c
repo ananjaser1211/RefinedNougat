@@ -339,12 +339,11 @@ int mmc_add_card(struct mmc_card *card)
  */
 void mmc_remove_card(struct mmc_card *card)
 {
-	if (mmc_card_present(card)) {
 #ifdef CONFIG_DEBUG_FS
-		mmc_remove_card_debugfs(card);
-		mmc_card_clr_present(card);
+	mmc_remove_card_debugfs(card);
 #endif
 
+	if (mmc_card_present(card)) {
 		if (mmc_host_is_spi(card->host)) {
 			pr_info("%s: SPI card removed\n",
 				mmc_hostname(card->host));

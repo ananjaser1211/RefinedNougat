@@ -129,7 +129,6 @@ struct idmac_desc {
 #define DW_MCI_BUSY_WAIT_TIMEOUT	250
 
 static struct dma_attrs dw_mci_direct_attrs;
-uint32_t mmc0_reg, mmc2_reg;
 
 #if defined(CONFIG_MMC_DW_DEBUG)
 static struct dw_mci_debug_data dw_mci_debug __cacheline_aligned;
@@ -949,7 +948,7 @@ static void dw_mci_idmac_stop_dma(struct dw_mci *host)
 	mci_writel(host, BMOD, temp);
 }
 
-void dw_mci_idma_reset_dma(struct dw_mci *host)
+static void dw_mci_idma_reset_dma(struct dw_mci *host)
 {
 	u32 temp;
 
@@ -3537,14 +3536,8 @@ static void dw_mci_work_routine_card(struct work_struct *work)
 			present = dw_mci_get_cd(mmc);
 		}
 
-		if (!present) {
-			mmc_detect_change(slot->mmc, 0);
-			if (host->pdata->only_once_tune)
-				host->pdata->tuned = false;
-		} else {
-			mmc_detect_change(slot->mmc,
-					msecs_to_jiffies(host->pdata->detect_delay_ms));
-		}
+		mmc_detect_change(slot->mmc,
+			msecs_to_jiffies(host->pdata->detect_delay_ms));
 	}
 }
 
@@ -3729,12 +3722,6 @@ static int dw_mci_init_slot(struct dw_mci *host, unsigned int id)
 	} else {
 		ctrl_id = to_platform_device(host->dev)->id;
 	}
-
-	if (ctrl_id == 0)
-		mmc0_reg = (uint32_t)host->regs;
-	else if (ctrl_id == 2)
-		mmc2_reg = (uint32_t)host->regs;
-
 	if (drv_data && drv_data->caps)
 		mmc->caps |= drv_data->caps[ctrl_id];
 
@@ -4677,9 +4664,6 @@ int dw_mci_suspend(struct dw_mci *host)
 		host->cmd_cnt = 0;
 	}
 
-	if (host->cd_irq)
-		disable_irq(host->cd_irq);
-
 	if (host->pdata->enable_cclk_on_suspend) {
 		host->pdata->on_suspend = true;
 		dw_mci_ciu_clk_en(host, false);
@@ -4704,9 +4688,6 @@ int dw_mci_resume(struct dw_mci *host)
 		host->pdata->on_suspend = false;
 
 	host->current_speed = 0;
-
-	if (host->cd_irq)
-		enable_irq(host->cd_irq);
 
 	mci_writel(host, DDR200_ENABLE_SHIFT, 0x0);
 

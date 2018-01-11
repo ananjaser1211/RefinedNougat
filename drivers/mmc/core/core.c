@@ -1942,7 +1942,6 @@ static inline void mmc_bus_put(struct mmc_host *host)
 int mmc_resume_bus(struct mmc_host *host)
 {
 	unsigned long flags;
-	int err = 0;
 
 	if (!mmc_bus_needs_resume(host))
 		return -EINVAL;
@@ -1957,11 +1956,13 @@ int mmc_resume_bus(struct mmc_host *host)
 	if (host->bus_ops && !host->bus_dead) {
 		mmc_power_up(host);
 		BUG_ON(!host->bus_ops->resume);
-		err = host->bus_ops->resume(host);
+		host->bus_ops->resume(host);
+		if (host->bus_ops->detect)
+			host->bus_ops->detect(host);
 	}
 
 	mmc_bus_put(host);
-	printk("%s: Deferred resume completed, err : %d\n", mmc_hostname(host), err);
+	printk("%s: Deferred resume completed\n", mmc_hostname(host));
 	return 0;
 }
 
@@ -2695,19 +2696,13 @@ int _mmc_detect_card_removed(struct mmc_host *host)
 {
 	int ret;
 
-	if ((host->caps & MMC_CAP_NONREMOVABLE) || (host->bus_ops && !host->bus_ops->alive))
+	if ((host->caps & MMC_CAP_NONREMOVABLE) || !host->bus_ops->alive)
 		return 0;
 
 	if (!host->card || mmc_card_removed(host->card))
 		return 1;
 
-	if (host->bus_ops)
-		ret = host->bus_ops->alive(host);
-	else {
-		if (host->card)
-			mmc_card_set_removed(host->card);
-		return 1;
-	}
+	ret = host->bus_ops->alive(host);
 
 	/*
 	 * Card detect status and alive check may be out of sync if card is
@@ -2718,12 +2713,12 @@ int _mmc_detect_card_removed(struct mmc_host *host)
 	 */
 	if (!ret && host->ops->get_cd && !host->ops->get_cd(host)) {
 		mmc_detect_change(host, msecs_to_jiffies(200));
-		pr_err("%s: card removed too slowly\n", mmc_hostname(host));
+		pr_debug("%s: card removed too slowly\n", mmc_hostname(host));
 	}
 
-	if (ret && host->card) {
+	if (ret) {
 		mmc_card_set_removed(host->card);
-		pr_err("%s: card remove detected, ret : %d\n", mmc_hostname(host), ret);
+		pr_debug("%s: card remove detected\n", mmc_hostname(host));
 		ST_LOG("<%s> %s: card remove detected\n", __func__,mmc_hostname(host));
 	}
 
@@ -2786,10 +2781,6 @@ void mmc_rescan(struct work_struct *work)
 		return;
 	host->rescan_entered = 1;
 
-	/* if there is a card present */
-	if (host->card)
-		extend_wakelock = true;
-
 	mmc_bus_get(host);
 
 	/*
@@ -2802,6 +2793,12 @@ void mmc_rescan(struct work_struct *work)
 
 	host->detect_change = 0;
 
+	/* If the card was removed the bus will be marked
+	 * as dead - extend the wakelock so userspace
+	 * can respond */
+	if (host->bus_dead)
+		extend_wakelock = 1;
+
 	/*
 	 * Let mmc_bus_put() free the bus/bus_ops if we've found that
 	 * the card is no longer present.
@@ -2812,7 +2809,6 @@ void mmc_rescan(struct work_struct *work)
 	/* if there still is a card present, stop here */
 	if (host->bus_ops != NULL) {
 		mmc_bus_put(host);
-		extend_wakelock = false;
 		goto out;
 	}
 
@@ -3219,10 +3215,16 @@ int mmc_pm_notify(struct notifier_block *notify_block,
 	case PM_POST_SUSPEND:
 	case PM_POST_HIBERNATION:
 	case PM_POST_RESTORE:
+
 		spin_lock_irqsave(&host->lock, flags);
+		if (mmc_bus_manual_resume(host)) {
+			spin_unlock_irqrestore(&host->lock, flags);
+			break;
+		}
 		host->rescan_disable = 0;
 		spin_unlock_irqrestore(&host->lock, flags);
 		mmc_detect_change(host, 0);
+
 	}
 
 	return 0;
