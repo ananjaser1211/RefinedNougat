@@ -28,31 +28,31 @@ rm -rf $DTS/.*.cmd
 rm -rf $DTS/*.dtb
 
 # Calculate DTS size for all images and display on terminal output
-du -k "./dt.img" | cut -f1 >sizT
+du -k "./boot.img-dtb" | cut -f1 >sizT
 sizT=$(head -n 1 sizT)
 rm -rf sizT
 echo "$sizT Kb"
 
 echo "Remove Any files"
-cd /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux
+cd /home/elite/android/RefinedNougat/rf-tools/AIK-Linux
 
 sudo ./cleanup.sh
 
 echo "Copy Ramdisk"
 
-sudo cp -a /home/elite/android/refinedkernel_2/rf-tools/Unified/ramdisk/. /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux/ramdisk
+sudo cp -a /home/elite/android/RefinedNougat/rf-tools/Unified/ramdisk/. /home/elite/android/RefinedNougat/rf-tools/AIK-Linux/ramdisk
 
 echo "copy split-img"
 
-sudo cp -a /home/elite/android/refinedkernel_2/rf-tools/Unified/split_img/. /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux/split_img
+sudo cp -a /home/elite/android/RefinedNougat/rf-tools/Unified/split_img/. /home/elite/android/RefinedNougat/rf-tools/AIK-Linux/split_img
 
 echo "copy compiled zimage"
 
-sudo cp /home/elite/android/refinedkernel_2/arch/arm/boot/zImage /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux/split_img/boot.img-zImage
+sudo cp /home/elite/android/RefinedNougat/arch/arm/boot/zImage /home/elite/android/RefinedNougat/rf-tools/AIK-Linux/split_img/boot.img-zImage
 
 echo "copy compiled dtb"
 
-sudo cp /home/elite/android/refinedkernel_2/boot.img-dtb /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux/split_img/boot.img-dtb
+sudo cp /home/elite/android/RefinedNougat/boot.img-dtb /home/elite/android/RefinedNougat/rf-tools/AIK-Linux/split_img/boot.img-dtb
 
 echo "packing image"
 
@@ -60,15 +60,15 @@ sudo ./repackimg.sh
 
 echo "Copy boot.img"
 
-sudo cp /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux/image-new.img /home/elite/android/refinedkernel_2/rf-tools/out/boot_N910C.img
+sudo cp /home/elite/android/RefinedNougat/rf-tools/AIK-Linux/image-new.img /home/elite/android/RefinedNougat/rf-tools/out/boot_N910C.img
 
 echo "Cleanup after packing"
 
-cd /home/elite/android/refinedkernel_2/rf-tools/AIK-Linux
+cd /home/elite/android/RefinedNougat/rf-tools/AIK-Linux
 
 sudo ./cleanup.sh
 
-rm /home/elite/android/refinedkernel_2/boot.img-dtb
+rm /home/elite/android/RefinedNougat/boot.img-dtb
 
 echo "boot.img saved to /rf-tools/out"
 

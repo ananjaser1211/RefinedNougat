@@ -21,7 +21,7 @@ rm -rf $DTS/.*.cmd
 rm -rf $DTS/*.dtb
 
 # Calculate DTS size for all images and display on terminal output
-du -k "./dt.img" | cut -f1 >sizT
+du -k "./boot.img-dtb" | cut -f1 >sizT
 sizT=$(head -n 1 sizT)
 rm -rf sizT
 echo "$sizT Kb"
