@@ -143,6 +143,10 @@ static struct notifier_block exynos_cpufreq_nb = {
 	.notifier_call = exynos5_tmu_cpufreq_notifier,
 };
 
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+struct exynos_tmu_data *gpu_thermal_data_ptr = NULL;
+#endif
+
 /* For ePOP protection, handle additional thermal condition from MIF notification.*/
 #if defined(CONFIG_ARM_EXYNOS5430_BUS_DEVFREQ) || defined(CONFIG_ARM_EXYNOS5433_BUS_DEVFREQ)
 #define MIF_THERMAL_THRESHOLD				4		/* MR4 state 4: 85~ degree */
@@ -1971,6 +1975,9 @@ static int exynos5_tmu_cpufreq_notifier(struct notifier_block *notifier, unsigne
 #ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
 			exynos_cpufreq_init_unregister_notifier(&exynos_cpufreq_nb);
 #endif
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+			gpu_thermal_data_ptr = NULL;
+#endif
 			platform_set_drvdata(exynos_tmu_pdev, NULL);
 			for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
 				if (tmudata->irq[i])
@@ -2101,6 +2108,9 @@ static int exynos_tmu_probe(struct platform_device *pdev)
 
 	data->pdata = pdata;
 	tmudata = data;
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+	gpu_thermal_data_ptr = data;
+#endif
 	platform_set_drvdata(pdev, data);
 	mutex_init(&data->lock);
 
@@ -2203,6 +2213,9 @@ err_get_resource:
 	}
 err_request_irq:
 err_get_irq:
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+	gpu_thermal_data_ptr = NULL;
+#endif
 	kfree(data);
 
 	return ret;
@@ -2220,7 +2233,9 @@ static int exynos_tmu_remove(struct platform_device *pdev)
 	exynos_pm_unregister_notifier(&exynos_pm_dstop_nb);
 #endif
 	exynos_unregister_thermal();
-
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+	gpu_thermal_data_ptr = NULL;
+#endif
 	platform_set_drvdata(pdev, NULL);
 
 	return 0;
