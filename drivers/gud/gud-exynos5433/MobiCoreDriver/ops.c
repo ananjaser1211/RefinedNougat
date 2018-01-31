@@ -40,8 +40,6 @@
 #include "pm.h"
 #include "debug.h"
 
-uint8_t core_status = 0xff;
-
 /* MobiCore context data */
 static struct mc_context *ctx;
 static int disable_local_timer;
@@ -226,7 +224,7 @@ static void fastcall_work_func(struct work_struct *work)
 		if (fc_generic->as_out.ret == 0) {
 			cpumask_t cpu;
 			active_cpu = new_cpu;
-			dev_info(mcd, "CoreSwap ok %d -> %d\n",
+			MCDRV_DBG(mcd, "CoreSwap ok %d -> %d\n",
 				  raw_smp_processor_id(), active_cpu);
 			cpumask_clear(&cpu);
 			cpumask_set_cpu(active_cpu, &cpu);
@@ -234,7 +232,7 @@ static void fastcall_work_func(struct work_struct *work)
 			set_cpus_allowed(fastcall_thread, cpu);
 #endif
 		} else {
-			dev_info(mcd, "CoreSwap failed %d -> %d\n",
+			MCDRV_DBG(mcd, "CoreSwap failed %d -> %d\n",
 				  raw_smp_processor_id(),
 				  fc_generic->as_in.param[0]);
 		}
@@ -245,85 +243,10 @@ static void fastcall_work_func(struct work_struct *work)
 #endif
 }
 
-#ifdef DUMP_TBASE_HALT_STATUS
-static void mc_info_ext(uint32_t ext_info_id, uint32_t *ext_info)
-{
-	union mc_fc_info fc_info;
-
-	memset(&fc_info, 0, sizeof(fc_info));
-	fc_info.as_in.cmd = MC_FC_INFO;
-	fc_info.as_in.ext_info_id = ext_info_id;
-
-	MCDRV_DBG(mcd, "<- cmd=0x%08x, ext_info_id=0x%08x",
-		  fc_info.as_in.cmd, fc_info.as_in.ext_info_id);
-
-	mc_fastcall(&(fc_info.as_generic));
-
-	*ext_info = fc_info.as_out.ext_info;
-}
-
-static void mc_dump_halt_status(uint32_t *flag, uint32_t *halt_code,
-				uint32_t *fault_thread)
-{
-	uint32_t ext_info;
-
-	dev_info(mcd, "Dump <t-base internal status:\n");
-	mc_info_ext(MC_EXT_INFO_ID_FLAGS, &ext_info);
-	dev_info(mcd, "Flag = 0x%08x\n", ext_info);
-	*flag = ext_info;
-	mc_info_ext(MC_EXT_INFO_ID_HALT_CODE, &ext_info);
-	dev_info(mcd, "Halt code = 0x%08x\n", ext_info);
-	*halt_code = ext_info;
-	mc_info_ext(MC_EXT_INFO_ID_HALT_IP, &ext_info);
-	dev_info(mcd, "Halt IP = 0x%08x\n", ext_info);
-
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_CNT, &ext_info);
-	dev_info(mcd, "Fault counter = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_CAUSE, &ext_info);
-	dev_info(mcd, "Fault cause = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_META, &ext_info);
-	dev_info(mcd, "Fault meta = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_THREAD, &ext_info);
-	dev_info(mcd, "Fault thread = 0x%08x\n", ext_info);
-	*fault_thread = ext_info;
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_IP, &ext_info);
-	dev_info(mcd, "Fault IP = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_SP, &ext_info);
-	dev_info(mcd, "Fault SP = 0x%08x\n", ext_info);
-
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_DFSR, &ext_info);
-	dev_info(mcd, "Fault ARCH DFSR = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_ADFSR, &ext_info);
-	dev_info(mcd, "Fault ARCH ADFSR = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_DFAR, &ext_info);
-	dev_info(mcd, "Fault ARCH DFAR = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_IFSR, &ext_info);
-	dev_info(mcd, "Fault ARCH IFSR = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_AIFSR, &ext_info);
-	dev_info(mcd, "Fault ARCH AIFSR = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_FAULT_ARCH_IFAR, &ext_info);
-	dev_info(mcd, "Fault ARCH IFAR = 0x%08x\n", ext_info);
-
-	mc_info_ext(MC_EXT_INFO_ID_MC_EXC_PARTNER, &ext_info);
-	dev_info(mcd, "ExcH partner = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_MC_EXC_IPCPEER, &ext_info);
-	dev_info(mcd, "ExcH peer = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_MC_EXC_IPCMSG, &ext_info);
-	dev_info(mcd, "ExcH msg = 0x%08x\n", ext_info);
-	mc_info_ext(MC_EXT_INFO_ID_MC_EXC_IPCDATA, &ext_info);
-	dev_info(mcd, "ExcH data = 0x%08x\n", ext_info);
-}
-#endif
-
 int mc_info(uint32_t ext_info_id, uint32_t *state, uint32_t *ext_info)
 {
 	int ret = 0;
 	union mc_fc_info fc_info;
-#ifdef DUMP_TBASE_HALT_STATUS
-	uint32_t flag = 0;
-	uint32_t halt_code = 0;
-	uint32_t fault_thread = 0;
-#endif
 
 	MCDRV_DBG_VERBOSE(mcd, "enter");
 
@@ -348,16 +271,6 @@ int mc_info(uint32_t ext_info_id, uint32_t *state, uint32_t *ext_info)
 	*state  = fc_info.as_out.state;
 	*ext_info = fc_info.as_out.ext_info;
 
-#ifdef DUMP_TBASE_HALT_STATUS
-	if ((*state == MC_STATUS_HALT) || ((ext_info_id == 1) && (*ext_info & SYS_STATE_HALT))) {
-		MCDRV_DBG_ERROR(mcd, "<t-base detects a system crash at secure world.");
-		mc_dump_halt_status(&flag, &halt_code, &fault_thread);
-		panic("<t-base detects a system crash at secure world: "
-				"Flag(0x%08x), Halt code(0x%08x), Fault thread(0x%08x)\n",
-				flag, halt_code, fault_thread);
-	}
-#endif
-
 	MCDRV_DBG_VERBOSE(mcd, "exit with %d/0x%08X", ret, ret);
 
 	return ret;
@@ -370,7 +283,7 @@ uint32_t mc_active_core(void)
 	return active_cpu;
 }
 
-int __mc_switch_core(uint32_t core_num)
+int mc_switch_core(uint32_t core_num)
 {
 	int32_t ret = 0;
 	union mc_fc_swich_core fc_switch_core;
@@ -392,7 +305,7 @@ int __mc_switch_core(uint32_t core_num)
 		  "<- cmd=0x%08x, core_id=0x%08x\n",
 		 fc_switch_core.as_in.cmd,
 		 fc_switch_core.as_in.core_id);
-	dev_info(mcd,
+	MCDRV_DBG(mcd,
 		  "<- core_num=0x%08x, active_cpu=0x%08x\n",
 		 core_num, active_cpu);
 	mc_fastcall(&(fc_switch_core.as_generic));
@@ -404,24 +317,8 @@ int __mc_switch_core(uint32_t core_num)
 	return ret;
 }
 
-int mc_switch_core(uint32_t core_num)
-{
-	int ret;
-	mutex_lock(&ctx->core_switch_lock);
-	if (!(core_status & (0x1<<core_num))){
-		MCDRV_DBG(mcd, "Core status... core #%d is off line\n",core_num);
-		mutex_unlock(&ctx->core_switch_lock);
-		return 1;
-	}
-	ret = __mc_switch_core(core_num);
-	mutex_unlock(&ctx->core_switch_lock);
-	return ret;
-}
-
 void mc_cpu_offfline(int cpu)
 {
-	mutex_lock(&ctx->core_switch_lock);
-	core_status &= ~(0x1 << cpu);
 	if (active_cpu == cpu) {
 		int i;
 		/* Chose the first online CPU and switch! */
@@ -432,21 +329,12 @@ void mc_cpu_offfline(int cpu)
 			}
 			MCDRV_DBG(mcd, "CPU %d is dying, switching to %d\n",
 				  cpu, i);
-			__mc_switch_core(i);
+			mc_switch_core(i);
 			break;
 		}
 	} else {
 		MCDRV_DBG(mcd, "not active CPU, no action taken\n");
 	}
-
-	mutex_unlock(&ctx->core_switch_lock);
-}
-
-void mc_cpu_online(int cpu)
-{
-	mutex_lock(&ctx->core_switch_lock);
-	core_status |= (0x1 << cpu);
-	mutex_unlock(&ctx->core_switch_lock);
 }
 
 static int mobicore_cpu_callback(struct notifier_block *nfb,
@@ -455,9 +343,6 @@ static int mobicore_cpu_callback(struct notifier_block *nfb,
 	unsigned int cpu = (unsigned long)hcpu;
 
 	switch (action) {
-	case CPU_ONLINE:
-		mc_cpu_online(cpu);
-		break;
 	case CPU_DOWN_PREPARE:
 	case CPU_DOWN_PREPARE_FROZEN:
 		mc_cpu_offfline(cpu);

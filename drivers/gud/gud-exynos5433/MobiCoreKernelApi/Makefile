@@ -40,6 +40,14 @@ ifeq ($(PLATFORM), EXYNOS_5433_STD)
 	ccflags-y += -DMC_NETLINK_COMPAT_V37
 endif
 
+ifeq ($(PLATFORM), ARM_VE_AARCH32_FVP)
+	ccflags-y += -DMC_NETLINK_COMPAT_V37
+endif
+
+ifeq ($(PLATFORM), EXYNOS64_STD)
+	ccflags-y += -DMC_NETLINK_COMPAT_V37
+endif
+
 #EXTRA_CFLAGS += -DDEBUG -DDEBUG_VERBOSE
 #EXTRA_CFLAGS += -Wno-declaration-after-statement
 ccflags-y += -Wno-declaration-after-statement
