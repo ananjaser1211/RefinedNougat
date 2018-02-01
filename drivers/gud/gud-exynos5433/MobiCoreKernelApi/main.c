@@ -96,12 +96,16 @@ void mcapi_remove_connection(uint32_t seq)
 static int mcapi_process(struct sk_buff *skb, struct nlmsghdr *nlh)
 {
 	struct connection *c;
+	int length;
 	int seq;
+	pid_t pid;
 	int ret;
 
+	pid = nlh->nlmsg_pid;
+	length = nlh->nlmsg_len;
 	seq = nlh->nlmsg_seq;
 	MCDRV_DBG_VERBOSE(mc_kapi, "nlmsg len %d type %d pid 0x%X seq %d\n",
-			  nlh->nlmsg_len, nlh->nlmsg_type, nlh->nlmsg_pid, seq);
+			  length, nlh->nlmsg_type, pid, seq);
 	do {
 		c = mcapi_find_connection(seq);
 		if (!c) {

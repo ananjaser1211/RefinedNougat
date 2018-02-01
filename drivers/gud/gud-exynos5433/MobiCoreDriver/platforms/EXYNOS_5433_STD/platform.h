@@ -50,4 +50,6 @@
 
 #define DEFAULT_SECOS_BOOST_TIME	5000
 
+#define DUMP_TBASE_HALT_STATUS
+
 #endif /* _MC_DRV_PLATFORM_H_ */

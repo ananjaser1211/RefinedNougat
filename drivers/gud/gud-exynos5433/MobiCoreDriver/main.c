@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 TRUSTONIC LIMITED
+ * Copyright (c) 2013-2016 TRUSTONIC LIMITED
  * All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -114,8 +114,7 @@ static uint32_t get_new_buffer_handle(void)
 	/* assumption ctx.bufs_lock mutex is locked */
 retry:
 	handle = atomic_inc_return(&ctx.buffer_counter);
-	/*
-	 * if upper 12 bits are set we must reset to 0, we can only
+	/* if upper 12 bits are set we must reset to 0, we can only
 	 * handler 20 bits of unique ID for the buffer because the need
 	 * to support both 32 and 64 bit clients with the 64 bit kernel
 	 */
@@ -331,10 +330,8 @@ found_buffer:
 		goto err;
 	}
 	mutex_unlock(&ctx.bufs_lock);
-	/*
-	 * Only unmap if the request is coming from the user space and
-	 * it hasn't already been unmapped.
-	 */
+	/* Only unmap if the request is coming from the user space and
+	 * it hasn't already been unmapped */
 	if (!unlock && buffer->uaddr != NULL) {
 #ifndef MC_VM_UNMAP
 		/* do_munmap must be done with mm->mmap_sem taken */
@@ -348,11 +345,9 @@ found_buffer:
 		ret = vm_munmap((long unsigned int)buffer->uaddr, buffer->len);
 #endif
 		if (ret < 0) {
-			/*
-			 * Something is not right if we end up here, better not
+			/* Something is not right if we end up here, better not
 			 * clean the buffer so we just leak memory instead of
-			 * creating security issues
-			 */
+			 * creating security issues */
 			MCDRV_DBG_ERROR(mcd, "Memory can't be unmapped");
 			return -EINVAL;
 		}
@@ -399,9 +394,7 @@ int mc_get_buffer(struct mc_instance *instance,
 	void *addr = 0;
 	phys_addr_t phys = 0;
 	unsigned int order;
-#if defined(DEBUG_VERBOSE)
 	unsigned long allocated_size;
-#endif
 	int ret = 0;
 
 	if (WARN(!instance, "No instance data available"))
@@ -417,9 +410,7 @@ int mc_get_buffer(struct mc_instance *instance,
 		MCDRV_DBG_WARN(mcd, "Buffer size too large");
 		return -ENOMEM;
 	}
-#if defined(DEBUG_VERBOSE)
 	allocated_size = (1 << order) * PAGE_SIZE;
-#endif
 
 	if (mutex_lock_interruptible(&instance->lock))
 		return -ERESTARTSYS;
@@ -518,6 +509,7 @@ static phys_addr_t get_mci_base_phys(unsigned int len)
 		ctx.mci_base.order = order;
 		ctx.mci_base.addr =
 			(void *)__get_free_pages(GFP_USER | __GFP_ZERO, order);
+		ctx.mci_base.len = (1 << order) * PAGE_SIZE;
 		if (ctx.mci_base.addr == NULL) {
 			MCDRV_DBG_WARN(mcd, "get_free_pages failed");
 			memset(&ctx.mci_base, 0, sizeof(ctx.mci_base));
@@ -541,10 +533,6 @@ int mc_register_wsm_mmu(struct mc_instance *instance,
 	struct task_struct *task = current;
 	void *kbuff = NULL;
 
-	uint32_t index;
-	uint32_t nb_mmu_table;
-	phys_addr_t *mmu_table = NULL;
-
 	if (WARN(!instance, "No instance data available"))
 		return -EFAULT;
 
@@ -555,72 +543,14 @@ int mc_register_wsm_mmu(struct mc_instance *instance,
 
 	MCDRV_DBG_VERBOSE(mcd, "buffer: %p, len=%08x", buffer, len);
 
-	nb_mmu_table = len / SZ_1M;
-	if ((len & (SZ_1M - 1)) != 0)
-		nb_mmu_table++;
+	if (!mc_find_cont_wsm_addr(instance, buffer, &kbuff, len))
+		table = mc_alloc_mmu_table(instance, NULL, kbuff, len);
+	else
+		table = mc_alloc_mmu_table(instance, task, buffer, len);
 
-	if (nb_mmu_table > 1) {
-		/* ensure that table allocation will not exceed 4KB */
-		if (nb_mmu_table < SZ_4K/sizeof(uint32_t)) {
-			MCDRV_DBG_VERBOSE(mcd, "allocate %d L2 table",
-					  nb_mmu_table);
-
-			mmu_table = (phys_addr_t *)get_zeroed_page(GFP_KERNEL);
-			if (mmu_table == NULL) {
-				MCDRV_DBG_ERROR(mcd,
-						"fake L1 table alloc. failed");
-				return -ENOMEM;
-			}
-		} else {
-			MCDRV_DBG_ERROR(mcd, "fake L1 table size too big");
-			return -ENOMEM;
-		}
-	}
-
-	if (!mc_find_cont_wsm_addr(instance, buffer, &kbuff, len)) {
-		buffer = kbuff;
-		task = NULL;
-	}
-
-	for (index = 0; index < nb_mmu_table; index++) {
-		unsigned int offset = (unsigned int)
-			(((unsigned long)(buffer)) & (~PAGE_MASK));
-		unsigned int tmp_len = len;
-
-		if (tmp_len + offset > SZ_1M)
-			tmp_len = SZ_1M-offset;
-
-		table = mc_alloc_mmu_table(instance, task, buffer, tmp_len);
-
-		if (IS_ERR(table)) {
-			MCDRV_DBG_ERROR(mcd, "mc_alloc_mmu_table() failed");
-			return -EINVAL;
-		}
-
-		if (mmu_table != NULL) {
-			MCDRV_DBG_VERBOSE(mcd, "fake L1 %p add L2 descr %p",
-					  mmu_table + index,
-					  table->phys);
-			mmu_table[index] = table->phys;
-		}
-
-		buffer += tmp_len;
-		len -= tmp_len;
-	}
-	if (mmu_table != NULL) {
-		MCDRV_DBG_VERBOSE(mcd, "fake L1 buffer: %p, len=%08x",
-				  mmu_table,
-				  nb_mmu_table*sizeof(uint32_t));
-
-		table = mc_alloc_mmu_table(
-					instance,
-					NULL,
-					mmu_table,
-					nb_mmu_table*sizeof(uint32_t));
-		if (IS_ERR(table)) {
-			MCDRV_DBG_ERROR(mcd, "mc_alloc_mmu_table() failed");
-			return -EINVAL;
-		}
+	if (IS_ERR(table)) {
+		MCDRV_DBG_ERROR(mcd, "mc_alloc_mmu_table() failed");
+		return -EINVAL;
 	}
 
 	/* set response */
@@ -782,15 +712,13 @@ found:
 		 * at PAGE_OFFSET, user address range is below PAGE_OFFSET.
 		 * Remapping the area is always done, so multiple mappings
 		 * of one region are possible. Now remap kernel address
-		 * space into user space.
+		 * space into user space
 		 */
 		ret = (int)remap_pfn_range(vmarea, vmarea->vm_start,
 				page_to_pfn(virt_to_page(buffer->addr)),
 				buffer->len, vmarea->vm_page_prot);
-		/*
-		 * If the remap failed then don't mark this buffer as marked
-		 * since the unmaping will also fail.
-		 */
+		/* If the remap failed then don't mark this buffer as marked
+		 * since the unmaping will also fail */
 		if (ret)
 			buffer->uaddr = NULL;
 		mutex_unlock(&ctx.bufs_lock);
@@ -801,14 +729,15 @@ found:
 		if (!ctx.mci_base.addr)
 			return -EFAULT;
 
+		if (len != ctx.mci_base.len)
+			return -EINVAL;
+
 		vmarea->vm_flags |= VM_IO;
-		/*
-		 * Convert kernel address to user address. Kernel address begins
+		/* Convert kernel address to user address. Kernel address begins
 		 * at PAGE_OFFSET, user address range is below PAGE_OFFSET.
 		 * Remapping the area is always done, so multiple mappings
 		 * of one region are possible. Now remap kernel address
-		 * space into user space.
-		 */
+		 * space into user space */
 		ret = (int)remap_pfn_range(vmarea, vmarea->vm_start,
 				page_to_pfn(virt_to_page(ctx.mci_base.addr)),
 				len, vmarea->vm_page_prot);
@@ -858,43 +787,13 @@ static long mc_fd_user_ioctl(struct file *file, unsigned int cmd,
 		ret = mc_free_buffer(instance, (uint32_t)arg);
 		break;
 
-	/*
-	 * 32/64 bit interface compatiblity notice:
-	 * mc_ioctl_reg_wsm has been defined with the buffer parameter
-	 * as void* which means that the size and layout of the structure
-	 * are different between 32 and 64 bit variants.
-	 * However our 64 bit Linux driver must be able to service both
-	 * 32 and 64 bit clients so we have to allow both IOCTLs. Though
-	 * we have a bit of copy paste code we provide maximum backwards
-	 * compatiblity.
-	 */
 	case MC_IO_REG_WSM:{
 		struct mc_ioctl_reg_wsm reg;
-		phys_addr_t phys = 0;
+		phys_addr_t phys;
 		if (copy_from_user(&reg, uarg, sizeof(reg)))
 			return -EFAULT;
 
-		ret = mc_register_wsm_mmu(instance,
-			(void *)(uintptr_t)reg.buffer,
-			reg.len, &reg.handle, &phys);
-		reg.table_phys = phys;
-
-		if (!ret) {
-			if (copy_to_user(uarg, &reg, sizeof(reg))) {
-				ret = -EFAULT;
-				mc_unregister_wsm_mmu(instance, reg.handle);
-			}
-		}
-		break;
-	}
-	case MC_COMPAT_REG_WSM:{
-		struct mc_compat_ioctl_reg_wsm reg;
-		phys_addr_t phys = 0;
-		if (copy_from_user(&reg, uarg, sizeof(reg)))
-			return -EFAULT;
-
-		ret = mc_register_wsm_mmu(instance,
-			(void *)(uintptr_t)reg.buffer,
+		ret = mc_register_wsm_mmu(instance, (void *)reg.buffer,
 			reg.len, &reg.handle, &phys);
 		reg.table_phys = phys;
 
@@ -928,11 +827,9 @@ static long mc_fd_user_ioctl(struct file *file, unsigned int cmd,
 			return -EFAULT;
 
 		map.handle = buffer->handle;
-		/*
-		 * Trick: to keep the same interface with the user space, store
-		 * the handle in the physical address.
-		 * It is given back with the offset when mmap() is called.
-		 */
+		/* Trick: to keep the same interface with the user space, store
+		   the handle in the physical address.
+		   It is given back with the offset when mmap() is called. */
 		map.phys_addr = buffer->handle << PAGE_SHIFT;
 		map.reused = 0;
 		if (copy_to_user(uarg, &map, sizeof(map)))
@@ -1246,12 +1143,10 @@ int mc_release_instance(struct mc_instance *instance)
 
 	/* Check if some buffers are orphaned. */
 	list_for_each_entry_safe(buffer, tmp, &ctx.cont_bufs, list) {
-		/*
-		 * It's safe here to only call free_buffer() without unmapping
+		/* It's safe here to only call free_buffer() without unmapping
 		 * because mmap() takes a refcount to the file's fd so only
 		 * time we end up here is when everything has been unmapped or
-		 * the process called exit()
-		 */
+		 * the process called exit() */
 		if (buffer->instance == instance) {
 			buffer->instance = NULL;
 			free_buffer(buffer);
@@ -1469,8 +1364,7 @@ static int __init mobicore_init(void)
 	int ret = 0;
 	dev_set_name(mcd, "mcd");
 
-	/*
-	 * Do not remove or change the following trace.
+	/* Do not remove or change the following trace.
 	 * The string "MobiCore" is used to detect if <t-base is in of the image
 	 */
 	dev_info(mcd, "MobiCore Driver, Build: " __TIMESTAMP__ "\n");
@@ -1541,6 +1435,9 @@ static int __init mobicore_init(void)
 	/* init lock for the buffers list */
 	mutex_init(&ctx.bufs_lock);
 
+	/* init lock for core switch processing */
+	mutex_init(&ctx.core_switch_lock);
+
 	memset(&ctx.mci_base, 0, sizeof(ctx.mci_base));
 	MCDRV_DBG(mcd, "initialized");
 	return 0;
@@ -1601,6 +1498,7 @@ bool mc_sleep_ready(void)
 /* Linux Driver Module Macros */
 module_init(mobicore_init);
 module_exit(mobicore_exit);
+MODULE_AUTHOR("Giesecke & Devrient GmbH");
 MODULE_AUTHOR("Trustonic Limited");
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("MobiCore driver");

@@ -12,4 +12,4 @@
  * GNU General Public License for more details.
  */
 #define MOBICORE_COMPONENT_BUILD_TAG \
-	"t-base-EXYNOS64-Android-302A-V001-2014-10-03_15-35-22_8"
+	"t-base-EXYNOS5433-Android-301-V008-2014-08-07_11-26-55_85"
