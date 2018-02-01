@@ -302,11 +302,13 @@ on init
     chmod 0664 /dev/cpuset/surfaceflinger/cpus
     chmod 0664 /dev/cpuset/cpus
 
-    # change own for camera preview lagging
+    # change own for camera lagging
     chown system system /sys/kernel/hmp/down_threshold
+    chown system system /sys/kernel/hmp/up_threshold
 
-    # set permission to 0660 for camera preview lagging
-    chmod 0660 /sys/kernel/hmp/down_threshold 
+    # set permission to 0660 for camera lagging
+    chmod 0660 /sys/kernel/hmp/down_threshold
+    chmod 0660 /sys/kernel/hmp/up_threshold
 
     # qtaguid will limit access to specific data based on group memberships.
     #   net_bw_acct grants impersonation of socket owners.
@@ -411,13 +413,16 @@ on late-init
 on post-fs
     start sec-sh
     start logd
+
+    # mobicore
+    setprop sys.mobicoredaemon.enable stopped
+
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
     # Mount shared so changes propagate into child namespaces
     mount rootfs rootfs / shared rec
     # Mount default storage into root namespace
     mount none /mnt/runtime/default /storage slave bind rec
-
 ## Samsung ODE >>>
     mount tmpfs tmpfs /mnt/secure private rec
 ## Samsung ODE <<<
@@ -456,7 +461,7 @@ on post-fs
     chown system log /proc/last_kmsg
     chmod 0440 /proc/last_kmsg
     chown system log /proc/reset_summary
-    chmod 0440 /proc/reset_summary    
+    chmod 0440 /proc/reset_summary
     chown system log /proc/sec_log
 
     # make the selinux kernel policy world-readable
@@ -510,7 +515,7 @@ on post-fs-data
     chown system system /dev/tzic
     restorecon /dev/icd
     restorecon /dev/icdr
-    
+
     #SideSync
     chown system system /dev/android_ssusbcon
     chmod 0660 /dev/android_ssusbcon
@@ -519,8 +524,14 @@ on post-fs-data
     start debuggerd
     start debuggerd64
 
-     # Make sure we have the device encryption key
-    start logd
+    # mobicore
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE  0770 radio system
+	  chmod 0660 /dev/t-base-tui
+    chown system system /dev/t-base-tui
+    start mobicore
+
+    # Make sure we have the device encryption key.
     start vold
     installkey /data
 
@@ -577,7 +588,7 @@ on post-fs-data
 
     #lpnetConfig AppSync
     mkdir /data/misc/lpnet 0700 system system
-	
+
 	# Professioanl Audio
     mkdir /data/misc/jack 0770 jack system
 
@@ -585,7 +596,7 @@ on post-fs-data
 
     #OTP
     mkdir /data/otp 0700 system system
-	
+
     # NFC
     mkdir /data/nfc 0700 nfc nfc
     mkdir /data/nfc/param 0700 nfc nfc
@@ -629,11 +640,6 @@ on post-fs-data
     mkdir /data/property 0700 root root
     mkdir /data/tombstones 0771 system system
 
-    # mobicore
-    mkdir /data/app/mcRegistry 0775 system system
-    mkdir /data/app/mcRegistry/TbStorage 0700 system system
-    mkdir /efs/TEE  0770 radio system
-
     # create dalvik-cache, so as to enforce our permissions
     mkdir /data/dalvik-cache 0771 root root
     # create the A/B OTA directory, so as to enforce our permissions
@@ -658,7 +664,7 @@ on post-fs-data
     mkdir /data/anr 0775 system system
 
 # [ SEC_SELINUX_PORTING_COMMON
-    # Separate location for storing security policy files on data    
+    # Separate location for storing security policy files on data
     mkdir /data/security 0700 system system
 # ] SEC_SELINUX_PORTING_COMMON
 
@@ -670,8 +676,8 @@ on post-fs-data
     #create uibc dir
     mkdir /dev/socket/uibc 0777 media system
     chown media system /dev/socket/uibc
-    chmod 0775 /dev/socket/uibc    
-    
+    chmod 0775 /dev/socket/uibc
+
     # VaultKeeper socket
     mkdir /dev/socket/vaultkeeper 0770 system system
     chown system system /dev/socket/vaultkeeper
@@ -774,12 +780,12 @@ on boot
 	# KNOX KAP
     chown system system /dev/knox_kap
     chmod 0660 /dev/knox_kap
-	
+
     # permissions for bluetooth.
     mkdir /efs/bluetooth 0775 radio system
     chown radio system /efs/bluetooth
     chmod 0775 /efs/bluetooth
-    
+
     setprop ro.bt.bdaddr_path "/efs/bluetooth/bt_addr"
     chown bluetooth net_bt_stack ro.bt.bdaddr_path
     chown radio net_bt_stack /efs/bluetooth/bt_addr
@@ -799,7 +805,7 @@ on boot
     # MTP permission
     chmod 0660 /dev/usb_mtp_gadget
     chown system mtp /dev/usb_mtp_gadget
-    mkdir /dev/socket/mtp 0770 system mtp	
+    mkdir /dev/socket/mtp 0770 system mtp
 
     # NPS permission
     mkdir /dev/socket/nps 0770 system system
@@ -845,6 +851,8 @@ on boot
     chmod 0660 /sys/class/sec_touchkey/input/enabled
     chown system system /sys/class/sec/sec_touchkey/input/enabled
     chown system radio /sys/class/sec/sec_touchkey/brightness
+    chown system radio /sys/class/sec/sec_touchkey/touchkey_light_update
+    chown system radio /sys/class/sec/sec_touchkey/touchkey_light_table_write
 
 # Permissions for Auto Input
     chown system system /sys/class/sec/sec_auto_input/enable
@@ -918,6 +926,20 @@ on boot
 
     chown radio system /sys/devices/system/cpu/kernel_max
     chmod 0664 /sys/devices/system/cpu/kernel_max
+
+    # Change permission for input booster
+    chown system radio /sys/class/input_booster/level
+    chown system radio /sys/class/input_booster/head
+    chown system radio /sys/class/input_booster/tail
+    chown system radio /sys/class/input_booster/touchkey/level
+    chown system radio /sys/class/input_booster/touchkey/freq
+    chown system radio /sys/class/input_booster/touchkey/time
+    chmod 0664 /sys/class/input_booster/level
+    chmod 0664 /sys/class/input_booster/head
+    chmod 0664 /sys/class/input_booster/tail
+    chmod 0664 /sys/class/input_booster/touchkey/level
+    chmod 0664 /sys/class/input_booster/touchkey/freq
+    chmod 0664 /sys/class/input_booster/touchkey/time
 
  # permission for CHARGING
    mkdir /efs/Battery 0775 radio system
@@ -1096,7 +1118,7 @@ on boot
     # Assume SMP uses shared cpufreq policy for all CPUs
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-	
+
 # Sensors permissions
 # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
@@ -1105,6 +1127,7 @@ on boot
     chown system radio /sys/class/sensors/accelerometer_sensor/selftest
     chown system radio /sys/class/sensors/accelerometer_sensor/vendor
     chown system radio /sys/class/sensors/accelerometer_sensor/name
+    chown system radio /sys/class/sensors/accelerometer_sensor/dhr_sensor_info
     chown system system /efs/calibration_data
     chmod 0666 /efs/calibration_data
 # Proximity_sensor
@@ -1119,6 +1142,7 @@ on boot
     chown system radio /sys/class/sensors/proximity_sensor/thresh_detect_low
     chown system radio /sys/class/sensors/proximity_sensor/vendor
     chown system radio /sys/class/sensors/proximity_sensor/name
+    chown system radio /sys/class/sensors/proximity_sensor/dhr_sensor_info
 # Light_sensor
     chown system radio /sys/class/sensors/light_sensor/lux
     chown system radio /sys/class/sensors/light_sensor/raw_data
@@ -1127,7 +1151,7 @@ on boot
 # Gyro_sensor
     chown system radio /sys/class/sensors/gyro_sensor/power_on
     chown system radio /sys/class/sensors/gyro_sensor/power_off
-    chown system radio /sys/class/sensors/gyro_sensor/temperature
+    chown system media /sys/class/sensors/gyro_sensor/temperature
     chown system radio /sys/class/sensors/gyro_sensor/selftest
     chown system radio /sys/class/sensors/gyro_sensor/selftest_dps
     chown system radio /sys/class/sensors/gyro_sensor/vendor
@@ -1139,6 +1163,40 @@ on boot
     chown system radio /sys/class/sensors/magnetic_sensor/vendor
     chown system radio /sys/class/sensors/magnetic_sensor/name
     chown system radio /sys/class/sensors/magnetic_sensor/status
+    chown system radio /sys/class/sensors/magnetic_sensor/dhr_sensor_info
+# Grip_sensor
+    chown system radio /sys/class/sensors/grip_sensor/name
+    chown system radio /sys/class/sensors/grip_sensor/vendor
+    chown system radio /sys/class/sensors/grip_sensor/raw_data
+    chown system radio /sys/class/sensors/grip_sensor/threshold
+    chown system radio /sys/class/sensors/grip_sensor/calibration
+    chown system radio /sys/class/sensors/grip_sensor/onoff
+    chown system radio /sys/class/sensors/grip_sensor/reset
+    chown system radio /sys/class/sensors/grip_sensor/mode
+    chown system radio /sys/class/sensors/grip_sensor/gain
+    chown system radio /sys/class/sensors/grip_sensor/start
+    chown system radio /sys/class/sensors/grip_sensor/normal_threshold
+    chown system radio /sys/class/sensors/grip_sensor/gain_ch2
+    chown system radio /sys/class/sensors/grip_sensor/raw_data_ch2
+    chown system radio /sys/class/sensors/grip_sensor/diff_avg_ch2
+    chown system radio /sys/class/sensors/grip_sensor/normal_threshold_ch2
+    chown system radio /sys/class/sensors/grip_sensor/ch_state
+    chown system radio /sys/class/sensors/grip_sensor/body_threshold
+    chown system radio /sys/class/sensors/grip_sensor/freq
+    chown system radio /sys/class/sensors/grip_sensor/grip_flush
+    chown system radio /sys/class/sensors/grip_sensor/irq_count
+# Grip_sensor wifi
+    chown system radio /sys/class/sensors/grip_sensor_wifi/name
+    chown system radio /sys/class/sensors/grip_sensor_wifi/vendor
+    chown system radio /sys/class/sensors/grip_sensor_wifi/raw_data
+    chown system radio /sys/class/sensors/grip_sensor_wifi/threshold
+    chown system radio /sys/class/sensors/grip_sensor_wifi/calibration
+    chown system radio /sys/class/sensors/grip_sensor_wifi/onoff
+    chown system radio /sys/class/sensors/grip_sensor_wifi/reset
+    chown system radio /sys/class/sensors/grip_sensor_wifi/mode
+    chown system radio /sys/class/sensors/grip_sensor_wifi/gain
+    chown system radio /sys/class/sensors/grip_sensor_wifi/normal_threshold
+    chown system radio /sys/class/sensors/grip_sensor_wifi/freq
 # MPL IIO
     chown system system /dev/invensense
     chown system system /sys/bus/iio/devices/invensense/buffer/enable
@@ -1154,6 +1212,7 @@ on boot
     chown system system /sys/class/timed_output/vibrator/enable
     chown system system /sys/class/timed_output/vibrator/intensity
     chown system system /sys/class/timed_output/vibrator/multi_freq
+    chown system system /sys/class/timed_output/vibrator/haptic_engine
     chown system system /sys/class/leds/keyboard-backlight/brightness
     chown system system /sys/class/leds/lcd-backlight/brightness
     chown system system /sys/class/leds/button-backlight/brightness
@@ -1172,6 +1231,10 @@ on boot
     chown system system /sys/kernel/ipv4/tcp_rmem_def
     chown system system /sys/kernel/ipv4/tcp_rmem_max
     chown root radio /proc/cmdline
+
+#Store Gyro cal data
+    chown system system /efs/FactoryApp/gyro_cal_data
+    chmod 0660 /efs/FactoryApp/gyro_cal_data
 
     # Define default initial receive window size in segments.
     setprop net.tcp.default_init_rwnd 60
@@ -1194,6 +1257,10 @@ on boot
     chmod 660 /sys/block/sda/diskios
 
 on nonencrypted
+    # mobicore
+    mkdir /data/misc/mcRegistry 0775 system system
+    # A/B update verifier that marks a successful boot.
+    exec - root -- /system/bin/update_verifier nonencrypted
     class_start main
     class_start late_start
 
@@ -1242,12 +1309,23 @@ on property:vold.decrypt=trigger_restart_min_framework
     class_start main
 
 on property:vold.decrypt=trigger_restart_framework
+    # PDP : Preload data preserve
+    pdp restore
+    pdp backup
+    # mobicore
+    mkdir /data/misc/mcRegistry 0775 system system
+    # A/B update verifier that marks a successful boot.
+    exec - root -- /system/bin/update_verifier trigger_restart_framework
     class_start main
     class_start late_start
 
 on property:vold.decrypt=trigger_shutdown_framework
     class_reset late_start
     class_reset main
+
+on property:persist.sys.zygote.early=true
+    start zygote
+    start zygote_secondary
 
 on property:sys.powerctl=*
     powerctl ${sys.powerctl}
@@ -1315,19 +1393,19 @@ service console /system/bin/sh
     user shell
     group shell log readproc
     seclabel u:r:shell:s0
-    
+
 service SIDESYNC_service /system/bin/ss_conn_daemon
     class main
     socket ss_conn_daemon stream 0666 system system
     user system
     group inet net_raw
-    
+
 ## WTL_EDM_START
 ## EDM AuditLog
 service edmaudit /system/bin/edmaudit
     class main
     user root
-    
+
 ## WTL_EDM_END
 
 service kap_enable /sbin/knox_changer -e
@@ -1428,7 +1506,7 @@ service flash_recovery /system/bin/install-recovery.sh
 # [ SEC_SELINUX_PORTING_COMMON
 on property:selinux.sec.restorecon=1
     restorecon_data_force /data
-    
+
 # Reload SE Android Policy for MDM
 on property:persist.security.mdm.policy=1
     setprop selinux.reload_policy 1
@@ -1440,7 +1518,7 @@ service bootchecker /system/bin/bootchecker
     user system
     group system log
     oneshot
-	
+
 # [ Professional audio
 service apaservice /system/bin/apaservice
 	class main

@@ -36,19 +36,10 @@ ro.bootimage.build.date=Fri Dec 1 11:15:36 KST 2017
 ro.bootimage.build.date.utc=1512094536
 ro.bootimage.build.fingerprint=samsung/nobleltejv/noblelte:7.0/NRD90M/N920CXXU3CQL1:user/test-keys
 
-# Keep WIFI settings on flash/reboot
-ro.securestorage.support=false
-
 # Possible Screen mirroring / AllShare Cast fix
 wlan.wfd.hdcp=disable
 
 # Disable Knox & Security tweaks
-ro.config.tima=0
-ro.security.mdpp.ux=Disabled
-ro.build.selinux=0
-ro.config.knox=0
-ro.securestorage.knox=false
-security.knox_kap_mode=false
 persist.service.adb.enable=1
 persist.service.debuggable=1
 persist.adb.notify=0

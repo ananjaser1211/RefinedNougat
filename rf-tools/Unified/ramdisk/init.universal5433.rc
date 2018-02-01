@@ -52,7 +52,6 @@ on init
     symlink /data/app /factory
     symlink /dev/block/platform/15540000.dwmmc0/by-name/PERSISTENT /dev/block/persistent
 
-
     mkdir /efs 0771 radio system
     symlink /dev/block/platform/15540000.dwmmc0/by-name/RADIO /dev/mbin0
     restorecon /dev/mbin0
@@ -67,21 +66,28 @@ on post-fs-data
 
     setprop vold.post_fs_data_done 1
 
-    # Permissions Camera
-    mkdir /data/camera 0770 media system
+# Permission for flashlight control for HAL3.3
+    chmod 0660 /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
+# Permissions Camera
+    mkdir /data/camera 0770 cameraserver system
     chown system radio /sys/class/camera/rear/rear_camfw
     chown system radio /sys/class/camera/rear/rear_camfw_full
     chown system radio /sys/class/camera/rear/rear_checkfw_user
     chown system radio /sys/class/camera/rear/rear_checkfw_factory
+    chown system radio /sys/class/camera/rear/rear_sensor_standby
     chown system radio /sys/class/camera/rear/rear_camtype
     chown system radio /sys/class/camera/rear/rear_companionfw
     chown system radio /sys/class/camera/rear/rear_companionfw_full
     chown system radio /sys/class/camera/rear/rear_calcheck
     chown system radio /sys/class/camera/rear/isp_core
     chown system radio /sys/class/camera/rear/fw_update
+    chown system radio /sys/class/camera/rear/from_write
     chown system radio /sys/class/camera/flash/rear_flash
-    chown media system /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
     chown system radio /sys/class/camera/front/front_camfw
+    chown system radio /sys/class/camera/front/front_camfw_full
+    chown system radio /sys/class/camera/front/front_checkfw_factory
     chown system radio /sys/class/camera/front/front_camtype
     chown system radio /sys/class/camera/ois/selftest
     chown system radio /sys/class/camera/ois/ois_power
@@ -444,6 +450,12 @@ on fs
     mkdir /data/firmware 0770 media system
     chown media system /data/firmware
 
+# Permissions for input_booster
+    chown system radio /sys/class/input_booster/level
+    chown system radio /sys/class/input_booster/head
+    chown system radio /sys/class/input_booster/tail
+    chown system radio /sys/class/input_booster/touch/control
+
 # Permissions for System LSI NFC
 # NFC : Permissions for NFC
     chmod 0660 /dev/sec-nfc
@@ -473,6 +485,7 @@ on fs
     chown system radio /sys/class/sensors/accelerometer_sensor/name
     chown system radio /sys/class/sensors/accelerometer_sensor/selftest
     chown system radio /sys/class/sensors/accelerometer_sensor/lowpassfilter
+
 # Proximity_sensor
     chown system radio /sys/class/sensors/proximity_sensor/state
     chown system radio /sys/class/sensors/proximity_sensor/raw_data
@@ -484,11 +497,15 @@ on fs
     chown system radio /sys/class/sensors/proximity_sensor/thresh_low
     chown system radio /sys/class/sensors/proximity_sensor/barcode_emul_en
     chown system radio /sys/class/sensors/proximity_sensor/prox_offset_pass
+    chown system radio /sys/class/sensors/proximity_sensor/prox_trim
+    chown system radio /sys/class/sensors/proximity_sensor/prox_probe
+
 # Light_sensor
     chown system radio /sys/class/sensors/light_sensor/lux
     chown system radio /sys/class/sensors/light_sensor/raw_data
     chown system radio /sys/class/sensors/light_sensor/vendor
     chown system radio /sys/class/sensors/light_sensor/name
+
 # Gyro_sensor
     chown system radio /sys/class/sensors/gyro_sensor/power_on
     chown system radio /sys/class/sensors/gyro_sensor/power_off
@@ -497,11 +514,14 @@ on fs
     chown system radio /sys/class/sensors/gyro_sensor/selftest_dps
     chown system radio /sys/class/sensors/gyro_sensor/vendor
     chown system radio /sys/class/sensors/gyro_sensor/name
+
 # Barometer_sensor
     chown system radio /sys/class/sensors/barometer_sensor/sea_level_pressure
     chown system radio /sys/class/sensors/barometer_sensor/vendor
     chown system radio /sys/class/sensors/barometer_sensor/name
     chown system radio /sys/class/sensors/barometer_sensor/calibration
+    chown system radio /sys/class/sensors/barometer_sensor/temperature
+
 # Magnetic_sensor
     chown system radio /sys/class/sensors/magnetic_sensor/raw_data
     chown system radio /sys/class/sensors/magnetic_sensor/vendor
@@ -522,22 +542,23 @@ on fs
     chown system radio /sys/class/sensors/temphumidity_sensor/batt_temperature
     chown system radio /sys/class/sensors/temphumidity_sensor/chg_temperature
 # HRM_sensor
-    chown system radio /sys/class/sensors/hrm_sensor/eol_test
-    chown system radio /sys/class/sensors/hrm_sensor/eol_test_result
-    chown system radio /sys/class/sensors/hrm_sensor/eol_test_status
-    chown system radio /sys/class/sensors/hrm_sensor/hr_range
-    chown system radio /sys/class/sensors/hrm_sensor/hr_range2
-    chown system radio /sys/class/sensors/hrm_sensor/look_mode_ir
-    chown system radio /sys/class/sensors/hrm_sensor/look_mode_red
+    chown system radio /sys/class/sensors/hrm_sensor/name
+    chown system radio /sys/class/sensors/hrm_sensor/vendor
     chown system radio /sys/class/sensors/hrm_sensor/led_current
     chown system radio /sys/class/sensors/hrm_sensor/led_current1
     chown system radio /sys/class/sensors/hrm_sensor/led_current2
     chown system radio /sys/class/sensors/hrm_sensor/led_current3
     chown system radio /sys/class/sensors/hrm_sensor/led_current4
+    chown system radio /sys/class/sensors/hrm_sensor/hr_range
+    chown system radio /sys/class/sensors/hrm_sensor/hr_range2
+    chown system radio /sys/class/sensors/hrm_sensor/look_mode_ir
+    chown system radio /sys/class/sensors/hrm_sensor/look_mode_red
+    chown system radio /sys/class/sensors/hrm_sensor/eol_test
+    chown system radio /sys/class/sensors/hrm_sensor/eol_test_result
+    chown system radio /sys/class/sensors/hrm_sensor/eol_test_status
     chown system radio /sys/class/sensors/hrm_sensor/int_pin_check
     chown system radio /sys/class/sensors/hrm_sensor/lib_ver
-    chown system radio /sys/class/sensors/hrm_sensor/name
-    chown system radio /sys/class/sensors/hrm_sensor/vendor
+    chown system radio /sys/class/sensors/hrm_sensor/regulator
     chown system radio /sys/class/sensors/hrm_sensor/part_type
     chown system radio /sys/class/sensors/hrm_sensor/adpd_reg_read
     chown system radio /sys/class/sensors/hrm_sensor/adpd_reg_write
@@ -548,20 +569,43 @@ on fs
     chown system radio /sys/class/sensors/hrm_sensor/eol_lib_ver
     chown system radio /sys/class/sensors/hrm_sensor/device_id
     chown system radio /sys/class/sensors/hrm_sensor/hrm_flush
+    chown system radio /sys/class/sensors/hrm_sensor/threshold
+    chown system radio /sys/class/sensors/hrm_sensor/read_reg
+    chown system radio /sys/class/sensors/hrm_sensor/write_reg
+    chown system radio /sys/class/sensors/hrm_sensor/ctrl_allreg_file
+    chown system radio /sys/class/sensors/hrm_sensor/led_current
+    chown system radio /sys/class/sensors/hrm_sensor/alc_enable
+    chown system radio /sys/class/sensors/hrm_sensor/selftest
+
 # HRMLED_sensor
     chown system radio /sys/class/sensors/hrmled_sensor/name
     chown system radio /sys/class/sensors/hrmled_sensor/vendor
     chown system radio /sys/class/sensors/hrmled_sensor/hrmled_flush
+
 # UV_sensor
-    chown system radio /sys/class/sensors/uv_sensor/uv_lib_ver
     chown system radio /sys/class/sensors/uv_sensor/name
     chown system radio /sys/class/sensors/uv_sensor/vendor
+    chown system radio /sys/class/sensors/uv_sensor/uv_lib_ver
     chown system radio /sys/class/sensors/uv_sensor/uv_sr_interval
     chown system radio /sys/class/sensors/uv_sensor/uv_eol_test
     chown system radio /sys/class/sensors/uv_sensor/uv_flush
-# SHTC1 BULK
-    chmod 0600 /dev/shtc1_sensor
-    chown system system /dev/shtc1_sensor
+
+# Grip_sensor
+    chown system radio /sys/class/sensors/grip_sensor/name
+    chown system radio /sys/class/sensors/grip_sensor/vendor
+    chown system radio /sys/class/sensors/grip_sensor/raw_data
+    chown system radio /sys/class/sensors/grip_sensor/threshold
+    chown system radio /sys/class/sensors/grip_sensor/calibration
+    chown system radio /sys/class/sensors/grip_sensor/onoff
+    chown system radio /sys/class/sensors/grip_sensor/reset
+    chown system radio /sys/class/sensors/grip_sensor/mode
+    chown system radio /sys/class/sensors/grip_sensor/gain
+    chown system radio /sys/class/sensors/grip_sensor/start
+    chown system radio /sys/class/sensors/grip_sensor/slope
+    chown system radio /sys/class/sensors/grip_sensor/temp
+    chown system radio /sys/class/sensors/grip_sensor/temp_cal
+    chown system radio /sys/class/sensors/grip_sensor/capmain
+
 # SensorHub
     chown system radio /sys/class/sensors/ssp_sensor/enable
     chown system radio /sys/class/sensors/ssp_sensor/mcu_rev
@@ -571,8 +615,7 @@ on fs
     chown system radio /sys/class/sensors/ssp_sensor/mcu_update
     chown system radio /sys/class/sensors/ssp_sensor/mcu_sleep_test
     chown system radio /sys/class/sensors/ssp_sensor/ori_poll_delay
-    chown system radio /sys/class/sensors/ssp_sensor/mag_poll_delay
-    chown system radio /sys/class/sensors/ssp_sensor/shake_cam
+    chown system radio /sys/class/sensors/ssp_sensor/sensor_dump
 
 # Sensorhub IIO
     chown system radio /sys/class/sensors/ssp_sensor/accel_poll_delay
@@ -583,7 +626,19 @@ on fs
     chown system radio /sys/class/sensors/ssp_sensor/uncalib_gyro_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/mag_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/uncal_mag_poll_delay
+	chown system radio /sys/class/sensors/ssp_sensor/light_ir_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/light_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/pressure_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/prox_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/sig_motion_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/step_cnt_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/uncal_gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/interrupt_gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/tilt_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/pickup_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/ssp_flush
+    chown system radio /sys/class/sensors/ssp_sensor/int_gyro_enable
+    chown system radio /sys/class/sensors/ssp_sensor/sensor_state
     chmod 0600 /dev/batch_io
     chown system system /dev/batch_io
 
@@ -712,6 +767,7 @@ on property:ro.bootmode=charger
 
 on property:ro.bootmode=charger
     class_start sec-charger
+
 # SensorHub (Location Hub)
 service lhd /system/bin/lhd /system/etc/lhd.conf
     class main
@@ -778,7 +834,7 @@ service dhcpcd_eth0 /system/bin/dhcpcd -ABKL
     oneshot
 
 # SSWAP
-service swapon /sbin/sswap -s
+service swapon /sbin/sswap -s -f 1536
     class core
     user root
     group root
