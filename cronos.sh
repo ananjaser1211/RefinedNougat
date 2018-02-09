@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cronos Kernel for Exynos xxxx
+# Cronos Kernel for Exynos 5433
 # Coded by Ananjaser1211/BlackMesa
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,38 +15,39 @@
 # limitations under the License.
 
 # Kernel Variables
-CR_VERSION=vxx
+CR_VERSION=v1.0
 CR_DATE=$(date +%Y%m%d)
 CR_TC_GCC=/home/elite/android/toolchain/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 CR_TC_UB=/home/elite/android/toolchain/ubertc-aarch64-4.9/bin/aarch64-linux-android-
+CR_TC_GCCARM=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
 CR_DIR=$(pwd)
-CR_OUT=$CR_DIR/cronos/out
-CR_DTS=arch/arm64/boot/dts
+CR_OUT=$CR_DIR/rf-tools/out
+CR_DTS=arch/arm/boot/dts
 CR_JOBS=5
-CR_AIK=$CR_DIR/cronos/AIK-Linux
-CR_RAMDISK=$CR_DIR/cronos/Unified
-CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
+CR_AIK=$CR_DIR/rf-tools/AIK-Linux
+CR_RAMDISK=$CR_DIR/rf-tools/Unified
+CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
 # Device specific Variables
-CR_DTSFILES=""
-CR_CONFG=
-CR_VARIANT=
-CR_ANDROID=
-CR_ARCH=
+CR_DTSFILES="exynos5433-tre_eur_open_07.dtb exynos5433-tre_eur_open_08.dtb exynos5433-tre_eur_open_09.dtb exynos5433-tre_eur_open_10.dtb exynos5433-tre_eur_open_12.dtb exynos5433-tre_eur_open_13.dtb exynos5433-tre_eur_open_14.dtb exynos5433-tre_eur_open_16.dtb"
+CR_CONFG=trelte_00_defconfig
+CR_VARIANT=N910C
+CR_ANDROID=7
+CR_ARCH=arm
 
 echo "----------------------------------------------"
 echo "Cleaning"
 echo " "
-make clean
-make mrproper
+# make clean
+# make mrproper
 rm -r -f $CR_OUT/*
 echo " "
 echo "----------------------------------------------"
 echo "Building zImage for $CR_VARIANT"
 echo " "
 export $CR_ARCH
-export CROSS_COMPILE=$CR_TC_UB
-export LOCALVERSION=-Cronos_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
+export CROSS_COMPILE=$CR_TC_GCCARM
+export LOCALVERSION=-Refined_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 make  $CR_CONFG
 make -j$CR_JOBS
@@ -55,11 +56,11 @@ echo "----------------------------------------------"
 echo "Building DTB for $CR_VARIANT"
 echo " "
 export $CR_ARCH
-export CROSS_COMPILE=$CR_TC_UB
+export CROSS_COMPILE=$CR_TC_GCCARM	
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 make  $CR_CONFG
 make $CR_DTSFILES
-./scripts/dtbTool/dtbTool -o ./boot.img-dtb -d $CR_DTS/ -s 2048
+./tools/dtbtool -o ./boot.img-dtb -v -s 2048 -p ./scripts/dtc/ $CR_DTS/
 rm -rf $CR_DTS/.*.tmp
 rm -rf $CR_DTS/.*.cmd
 rm -rf $CR_DTS/*.dtb
@@ -75,7 +76,7 @@ cp -rf $CR_RAMDISK/* $CR_AIK
 mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
 mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
 $CR_AIK/repackimg.sh
-mv $CR_AIK/image-new.img $CR_OUT/Cronos_$CR_VARIANT_$CR_VERSION-$CR_DATE.img
+mv $CR_AIK/image-new.img $CR_OUT/Refined_$CR_VARIANT_$CR_VERSION-$CR_DATE.img
 $CR_AIK/cleanup.sh
 echo "----------------------------------------------"
 echo "$CR_VARIANT Ready at $CR_OUT"

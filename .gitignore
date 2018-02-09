@@ -1,3 +1,5 @@
+# Generated
+
 cmd_flags
 include/config/
 include/generated/
@@ -26,6 +28,7 @@ scripts/mod/modpost
 scripts/selinux/genheaders/genheaders
 scripts/selinux/mdp/mdp
 scripts/sortextable
+boot.img-dtb
 .config
 .version
 .missing-syscalls.d
@@ -35,6 +38,10 @@ scripts/sortextable
 .tmp_vmlinux1
 .tmp_vmlinux2
 .vmlinux.cmd
+.config.old
+arch/arm/boot/compressed/.piggy.xzkern.cmd
+arch/arm/boot/compressed/.piggy.xzkern.o.cmd
+arch/arm/boot/compressed/piggy.xzkern.o
 System.map
 arch/arm/boot/.Image.cmd
 arch/arm/boot/.zImage.cmd
@@ -6570,17 +6577,20 @@ usr/modules.builtin
 usr/modules.order
 vmlinux
 vmlinux.o
-
 Module.symvers
-arch/arm64/include/generated/
-boot.img-dtb
-rf-tools/out/boot_J530F.img
-dmesg.sh
-lazy.sh
 drivers/leds/.tmp_led-class.ver
-rf-tools/out/
 drivers/leds/.tmp_led-class.ver
-bootfg.img-dtb
 crypto/.tmp_scatterwalk.ver
 kernel/rcu/.tmp_update.ver
 arch/arm/include/generated/
+
+# Work Directories
+rf-tools/N910C_ZIP/
+rf-tools/N910C_ZIP/*
+rf-tools/Sources/
+rf-tools/Sources/*
+rf-tools/out/*
+rf-tools/out/placeholder
+dmesg.sh
+lazy.sh
+*.patch
