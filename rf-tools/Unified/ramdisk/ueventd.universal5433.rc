@@ -97,7 +97,7 @@
 /dev/video11              0660   media      mediadrm
 
 # jpeg
-/dev/m2m1shot_jpeg	  0660   media      media
+/dev/m2m1shot_jpeg	  0660   cameraserver      media
 /dev/video12              0660   media      media
 
 # audio
