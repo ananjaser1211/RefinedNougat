@@ -43,6 +43,17 @@ config SENSORS_SSP_MPU6500
 	  To compile this driver as a module, choose M here: the
 	  module will be called ssp.
 
+config SENSORS_GYRO_2000DPS
+	tristate "Sensors ssp mpu6500"
+	default n
+	depends on SPI
+	help
+	  mpu6500 file for factory test in ssp driver.
+          If you say yes here you set range for gyro to
+	  2000DPS.
+	  To compile this driver as a module, choose M here: the
+	  module will be called ssp.
+
 config SENSORS_SSP_BMI058
 	tristate "Sensors ssp bmi058"
 	default n

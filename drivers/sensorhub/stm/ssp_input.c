@@ -182,17 +182,17 @@ void report_gyro_data(struct ssp_data *data, struct sensor_value *gyrodata)
 	data->buf[GYROSCOPE_SENSOR].z = gyrodata->z;
 
 	if (data->uGyroDps == GYROSCOPE_DPS500) {
+		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x >> 2;
+		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y >> 2;
+		lTemp[2] = (int)data->buf[GYROSCOPE_SENSOR].z >> 2;
+	} else if (data->uGyroDps == GYROSCOPE_DPS250)	{
+		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x >> 3;
+		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y >> 3;
+		lTemp[2] = (int)data->buf[GYROSCOPE_SENSOR].z >> 3;
+	} else if (data->uGyroDps == GYROSCOPE_DPS2000) {
 		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x;
 		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y;
 		lTemp[2] = (int)data->buf[GYROSCOPE_SENSOR].z;
-	} else if (data->uGyroDps == GYROSCOPE_DPS250)	{
-		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x >> 1;
-		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y >> 1;
-		lTemp[2] = (int)data->buf[GYROSCOPE_SENSOR].z >> 1;
-	} else if (data->uGyroDps == GYROSCOPE_DPS2000) {
-		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x << 2;
-		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y << 2;
-		lTemp[2] = (int)data->buf[GYROSCOPE_SENSOR].z << 2;
 	} else {
 		lTemp[0] = (int)data->buf[GYROSCOPE_SENSOR].x;
 		lTemp[1] = (int)data->buf[GYROSCOPE_SENSOR].y;

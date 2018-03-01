@@ -213,7 +213,8 @@ static int tmd3782_regulator_onoff(struct taos_data *data, int onoff)
 		regulator_disable(data->vdd_3p3);
 	}
 	regulator_put(data->vdd_3p3);
-	usleep_range(5000, 5100);
+	// Minimum interval of 5 ms for sensor stabilization
+	usleep_range(6000, 7000);
 
 	return 0;
 
@@ -318,7 +319,7 @@ static void taos_thresh_set(struct taos_data *taos)
 	}
 }
 
-static int taos_chip_on(struct taos_data *taos)
+static int taos_chip_on(struct taos_data *taos, bool prox_en)
 {
 	int ret = 0;
 	u8 temp_val;
@@ -370,11 +371,21 @@ static int taos_chip_on(struct taos_data *taos)
 		gprintk("opt_i2c_write to prox gain reg failed\n");
 	}
 
-	reg_cntrl = CNTL_INTPROXPON_ENBL;
+	/* Enable light sensor separately to avoid running proximity sensor at hardware level.
+	 * Enabling proximity sensor separately at hardware level will lead to erroneous readings.
+	 */
+	if (prox_en == false)
+		reg_cntrl = CNTL_ALS_ONLY_ENBL;
+	else
+		reg_cntrl = CNTL_INTPROXPON_ENBL;
+
 	ret = opt_i2c_write(taos, (CMD_REG|CNTRL), &reg_cntrl);
 	if (ret < 0) {
 		gprintk("opt_i2c_write to ctrl reg failed\n");
 	}
+
+	// Minimum 58 ms delay before reading data
+	msleep(60);
 
 	return ret;
 }
@@ -525,11 +536,6 @@ static void taos_light_enable(struct taos_data *taos)
 			break;
 	} while (--retry>=0);
 
-	if(!adc) {
-		taos_chip_off(taos);
-		taos_chip_on(taos);
-		msleep(60); /*more than 58 ms*/
-	}
 	taos_get_lux(taos);
 	hrtimer_start(&taos->timer, taos->light_poll_delay, HRTIMER_MODE_REL);
 }
@@ -614,8 +620,7 @@ static ssize_t light_enable_store(struct device *dev,
 		    new_value, (taos->power_state & LIGHT_ENABLED) ? 1 : 0);
 	if (new_value && !(taos->power_state & LIGHT_ENABLED)) {
 		if (!taos->power_state) {
-			taos_chip_on(taos);
-                	msleep(60); /*more than 58 ms*/
+			taos_chip_on(taos, false);
 		}
 		taos->power_state |= LIGHT_ENABLED;
 		taos_light_enable(taos);
@@ -637,6 +642,7 @@ static ssize_t proximity_enable_store(struct device *dev,
 	struct taos_data *taos = dev_get_drvdata(dev);
 	bool new_value;
 	int temp = 0, ret = 0;
+	u8 reg_cntrl = 0;
 
 	if (sysfs_streq(buf, "1")) {
 		new_value = true;
@@ -666,13 +672,20 @@ static ssize_t proximity_enable_store(struct device *dev,
 		}
 
 		if (!taos->power_state) {
-			taos_chip_on(taos);
+			taos_chip_on(taos, true);
+		} else {
+			// Proximity registers are already initialized so enable proximity hardware logic only.
+			reg_cntrl = CNTL_INTPROXPON_ENBL;
+			ret = opt_i2c_write(taos, (CMD_REG|CNTRL), &reg_cntrl);
+			if (ret < 0)
+				gprintk("opt_i2c_write to ctrl reg failed during prox enable\n");
+			msleep(60);
 		}
 
 		taos->power_state |= PROXIMITY_ENABLED;
 		taos->proximity_value = STATE_FAR;
 		taos_thresh_set(taos);
-		mdelay(10);
+		usleep_range(10000, 11000);
 		printk(KERN_ERR "%s, Thes_high = %d,Thes_low = %d\n",\
 			__func__,taos_proximity_get_threshold(taos, PRX_MAXTHRESHLO),taos_proximity_get_threshold(taos, PRX_MINTHRESHLO));
 
@@ -698,6 +711,13 @@ static ssize_t proximity_enable_store(struct device *dev,
 		taos->power_state &= ~PROXIMITY_ENABLED;
 		if (!taos->power_state) {
 			taos_chip_off(taos);
+		} else {
+			// Light sensor is still running so disable proximity hardware logic only.
+			reg_cntrl = CNTL_ALS_ONLY_ENBL;
+			ret = opt_i2c_write(taos, (CMD_REG|CNTRL), &reg_cntrl);
+			if (ret < 0)
+				gprintk("opt_i2c_write to ctrl reg failed during prox enable\n");
+			msleep(60);
 		}
 	}
 	mutex_unlock(&taos->power_lock);
@@ -1300,7 +1320,7 @@ static void taos_work_func_prox(struct work_struct *work)
 
 	while(chipid != 0x69 && i < 10)
 	{
-		msleep(5);
+		usleep_range(5000, 6000);
 		ret = opt_i2c_read(taos, CHIPID, &chipid);
 		i++;
 	}
@@ -1809,7 +1829,7 @@ static int taos_resume(struct device *dev)
 	struct taos_data *taos = i2c_get_clientdata(client);
 
 	if (taos->power_state == LIGHT_ENABLED) {
-		taos_chip_on(taos);
+		taos_chip_on(taos, false);
 	}
 	if (taos->power_state & LIGHT_ENABLED){
 		taos_light_enable(taos);
