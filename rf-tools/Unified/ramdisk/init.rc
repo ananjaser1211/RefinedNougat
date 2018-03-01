@@ -1575,11 +1575,6 @@ on property:persist.security.tlc.otp=1
     start otp
     setprop persist.security.tlc.otp 0	
 
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
-    class main
-    user system
-    group input
 
 # SecEDS
 service TvoutService_C /system/bin/bintvoutservice
