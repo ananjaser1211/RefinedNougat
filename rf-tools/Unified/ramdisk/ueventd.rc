@@ -19,8 +19,6 @@ subsystem adf
 /dev/hw_random            0440   root       system
 /dev/ashmem               0666   root       root
 /dev/binder               0666   root       root
-/dev/hidraw1              0664   root       system
-/dev/ovr*                 0664   root       system
 
 # Anyone can read the logs, but if they're not in the "logs"
 # group, then they'll only see log entries for their UID.
@@ -47,7 +45,7 @@ subsystem adf
 /dev/alarm                0664   system     radio
 /dev/rtc0                 0640   system     system
 /dev/tty0                 0660   root       system
-/dev/graphics/*           0660   root       graphics
+/dev/graphics/*           0660   system     graphics
 /dev/msm_hw3dm            0660   system     graphics
 /dev/input/*              0660   root       input
 /dev/eac                  0660   root       audio
@@ -119,7 +117,24 @@ subsystem adf
 # Secure MEM driver
 /dev/s5p-smem             0660   system     system
 
+# sensorhub
+/dev/ssp_sensorhub        0660   system     system
+/dev/ssp_data_injection   0660   system     system
+
+# Reactivation Lock
+/dev/block/mmcblk0rpmb	0660	system	system
+
 # Fingerprint Sensor
 /dev/vfsspi        0660   system     system
 /dev/esfp0        0660   system     system
 
+# sensor sysfs properties
+/sys/devices/virtual/input/input*	poll_delay	0660	system	radio
+/sys/devices/virtual/input/input*	enable		0660	system	radio
+
+# Sensorhub IIO
+/dev/ssp_sensorhub        0660   system		system
+/dev/iio:device*          0660   system		system
+/sys/devices/14d20000.spi/spi_master/spi0/spi0.0/iio:device*    buffer/enable       0660    system    system
+/sys/devices/14d20000.spi/spi_master/spi0/spi0.0/iio:device*    buffer/length       0660    system    system
+/sys/bus/iio/devices/iio:device*    0664   system     radio
