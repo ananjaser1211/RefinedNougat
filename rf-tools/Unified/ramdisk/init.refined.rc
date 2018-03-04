@@ -23,7 +23,7 @@ service sensorhubservice /system/bin/sensorhubservice
     class main
     user system
     group input
-	disabled	
+	seclabel u:r:sensorhubservice:s0
 	
 # SensorHub (Location Hub)
 service lhd /system/bin/lhd /system/etc/lhd.conf
