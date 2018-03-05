@@ -30,6 +30,7 @@
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/spinlock.h>
+#include <mach/cpufreq.h>
 
 #include <linux/sec_sysfs.h>
 #include <linux/sec_debug.h>
@@ -505,11 +506,36 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	}
 
 	input_sync(input);
+
+	if (((button->code == KEY_POWER) || (button->code == KEY_HOMEPAGE))
+	    && !!state) {
+		event_hotplug_in();
+	}
+        
 #ifdef CONFIG_INPUT_BOOSTER
 	if (button->code == KEY_HOMEPAGE)
 		input_booster_send_event(BOOSTER_DEVICE_KEY, !!state);
+       	if ((button->code == KEY_RECENT) || (button->code == KEY_BACK))
+		input_booster_send_event(BOOSTER_DEVICE_TOUCHKEY, !!state)        
 #endif
 }
+
+/*static void gpio_keys_early_suspend(struct power_suspend *handler)
+{
+	suspended = true;
+	return;
+}
+
+static void gpio_keys_late_resume(struct power_suspend *handler)
+{
+	suspended = false;
+	return;
+}
+
+static struct power_suspend gpio_suspend = {
+	.suspend = gpio_keys_early_suspend,
+	.resume = gpio_keys_late_resume,
+};*/
 
 static void gpio_keys_gpio_work_func(struct work_struct *work)
 {
