@@ -18,6 +18,27 @@ on boot
     chmod 0644 /sys/devices/platform/gpusysfs/fps
     chown system shell /sys/devices/platform/gpusysfs/gpu_governor
     chown system shell /sys/devices/platform/gpusysfs/fps
+	
+  chown radio system /sys/devices/11400000.mali/dvfs_table
+    chown radio system /sys/devices/11400000.mali/dvfs_min_lock
+    chown radio system /sys/devices/11400000.mali/dvfs_max_lock
+    chmod 0664 /sys/devices/11400000.mali/dvfs_table
+    chmod 0664 /sys/devices/11400000.mali/dvfs_min_lock
+    chmod 0664 /sys/devices/11400000.mali/dvfs_max_lock
+
+    chown radio system /sys/class/devfreq/bus_mif.7/available_frequencies
+    chown radio system /sys/class/devfreq/bus_mif.7/min_freq
+    chown radio system /sys/class/devfreq/bus_mif.7/max_freq
+    chmod 0664 /sys/class/devfreq/bus_mif.7/available_frequencies
+    chmod 0664 /sys/class/devfreq/bus_mif.7/min_freq
+    chmod 0664 /sys/class/devfreq/bus_mif.7/max_freq
+
+    chown radio system /sys/class/devfreq/bus_int.6/available_frequencies
+    chown radio system /sys/class/devfreq/bus_int.6/min_freq
+    chown radio system /sys/class/devfreq/bus_int.6/max_freq
+    chmod 0664 /sys/class/devfreq/bus_int.6/available_frequencies
+    chmod 0664 /sys/class/devfreq/bus_int.6/min_freq
+    chmod 0664 /sys/class/devfreq/bus_int.6/max_freq	
 
 on property:sys.boot_completed=1
     start sysinit

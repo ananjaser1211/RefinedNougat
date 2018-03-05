@@ -800,17 +800,6 @@ on boot
     chown radio system /sys/class/secgpio_check/secgpio_check_all/gpiosleep_check
     chown radio system /sys/class/secgpio_check/secgpio_check_all/checked_sleepGPIO
 
-#permission for TSP, Touchkey
-    chown system radio /sys/class/sec/tsp/cmd
-    chmod 0660 /sys/class/sec/tsp/input/enabled
-    chown system system /sys/class/sec/tsp/input/enabled
-
-    chmod 0660 /sys/class/sec_touchkey/input/enabled
-    chown system system /sys/class/sec/sec_touchkey/input/enabled
-    chown system radio /sys/class/sec/sec_touchkey/brightness
-    chown system radio /sys/class/sec/sec_touchkey/touchkey_light_update
-    chown system radio /sys/class/sec/sec_touchkey/touchkey_light_table_write
-
 # Permissions for Auto Input
     chown system system /sys/class/sec/sec_auto_input/enable
     chown system system /sys/class/sec/sec_auto_input/tsp_event
@@ -874,6 +863,33 @@ on boot
     chown radio system /sys/power/cpufreq_max_limit
     chmod 0664 /sys/power/cpufreq_max_limit
 
+    # NFC_NXP
+    setprop ro.nfc.port "I2C"
+    chmod 0660 /dev/pn547
+    chown nfc nfc /dev/pn547
+    chown nfc /dev/pn547
+    chgrp nfc /dev/pn547
+
+    # NFC_BROADCOM
+    chmod 0600 /dev/bcm2079x
+    chown nfc nfc /dev/bcm2079x
+
+    # NFC_SLSI
+    chmod 0660 /dev/sec-nfc
+    chown nfc nfc /dev/sec-nfc
+
+    # KNOX KAP
+    chown system system /dev/knox_kap
+    chmod 0660 /dev/knox_kap
+
+    # MST/NFC Switch
+    chown spay system /dev/mst_ctrl
+    chmod 0660 /dev/mst_ctrl
+
+    #MST Factory Test
+    chown system system /sys/class/mstldo/mst_drv/transmit
+    chmod 0770 /sys/class/mstldo/mst_drv/transmit
+
     # mobicore
     chmod 0660 /dev/s5p-smem
     chown system system /dev/s5p-smem
@@ -881,22 +897,64 @@ on boot
     chown system system /dev/t-base-tui
     export MC_AUTH_TOKEN_PATH /efs
 
-    chown radio system /sys/devices/system/cpu/kernel_max
-    chmod 0664 /sys/devices/system/cpu/kernel_max
+    # Assume SMP uses shared cpufreq policy for all CPUs
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 
-    # Change permission for input booster
-    chown system radio /sys/class/input_booster/level
-    chown system radio /sys/class/input_booster/head
-    chown system radio /sys/class/input_booster/tail
-    chown system radio /sys/class/input_booster/touchkey/level
-    chown system radio /sys/class/input_booster/touchkey/freq
-    chown system radio /sys/class/input_booster/touchkey/time
-    chmod 0664 /sys/class/input_booster/level
-    chmod 0664 /sys/class/input_booster/head
-    chmod 0664 /sys/class/input_booster/tail
-    chmod 0664 /sys/class/input_booster/touchkey/level
-    chmod 0664 /sys/class/input_booster/touchkey/freq
-    chmod 0664 /sys/class/input_booster/touchkey/time
+    chown system system /sys/class/timed_output/vibrator/enable
+    chown system system /sys/class/timed_output/vibrator/intensity		
+    chown system system /sys/class/leds/keyboard-backlight/brightness
+    chown system system /sys/class/leds/lcd-backlight/brightness
+    chown system system /sys/class/leds/button-backlight/brightness
+    chown system system /sys/class/leds/jogball-backlight/brightness
+    chown system system /sys/class/leds/red/brightness
+    chown system system /sys/class/leds/green/brightness
+    chown system system /sys/class/leds/blue/brightness
+    chown system system /sys/class/leds/red/device/grpfreq
+    chown system system /sys/class/leds/red/device/grppwm
+    chown system system /sys/class/leds/red/device/blink
+    chown system system /sys/module/sco/parameters/disable_esco
+    chown system system /sys/kernel/ipv4/tcp_wmem_min
+    chown system system /sys/kernel/ipv4/tcp_wmem_def
+    chown system system /sys/kernel/ipv4/tcp_wmem_max
+    chown system system /sys/kernel/ipv4/tcp_rmem_min
+    chown system system /sys/kernel/ipv4/tcp_rmem_def
+    chown system system /sys/kernel/ipv4/tcp_rmem_max
+    chown root radio /proc/cmdline
+
+#permission for TSP, Touchkey and Wacom
+    chown system radio /sys/class/sec/tsp/cmd
+    chmod 0660 /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp/input/enabled
+
+    chmod 0660 /sys/class/sec_touchkey/input/enabled
+    chown system system /sys/class/sec/sec_touchkey/input/enabled
+	chown system radio /sys/class/sec/sec_touchkey/brightness
+	
+	chmod 0660 /sys/class/sec/sec_epen/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
+
+# Define default initial receive window size in segments.
+    setprop net.tcp.default_init_rwnd 60
+# Assign TCP buffer thresholds to be ceiling value of technology maximums
+# Increased technology maximums should be reflected here.
+    write /proc/sys/net/core/rmem_max  1048576
+    write /proc/sys/net/core/wmem_max  2097152
+
+    # Switch Device
+    chown system radio /sys/class/sec/switch/usb_sel
+    chown system radio /sys/class/sec/switch/uart_sel
+    chown system radio /sys/class/sec/switch/uart_en
+    chown system radio /sys/class/sec/switch/otg_test
+    chown system radio /sys/class/sec/switch/apo_factory
+
+    # GPIO DVS
+    chown radio system /sys/class/secgpio_check/secgpio_check_all/gpioinit_check
+    chown radio system /sys/class/secgpio_check/secgpio_check_all/gpiosleep_check
+    chown radio system /sys/class/secgpio_check/secgpio_check_all/checked_sleepGPIO
+
+    # Define default initial receive window size in segments.
+    setprop net.tcp.default_init_rwnd 60
 
  # permission for CHARGING
    mkdir /efs/Battery 0775 radio system

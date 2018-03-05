@@ -137,6 +137,11 @@ on boot
     chmod 0600 /dev/btlock
     chown bluetooth bluetooth /dev/btlock
 
+# Assign TCP buffer thresholds to be ceiling value of technology maximums
+# Increased technology maximums should be reflected here.
+    write /proc/sys/net/core/rmem_max  2097152
+    write /proc/sys/net/core/wmem_max  2097152
+
 	# DualWave
     chown system system /sys/kernel/DualWave/sound/DUALWAVE_CONFIG
 
