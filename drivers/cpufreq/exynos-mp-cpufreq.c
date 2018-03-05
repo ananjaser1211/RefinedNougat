@@ -61,10 +61,10 @@
 #define POWER_COEFF_7P		13 /* percore param */
 #endif
 
-static unsigned int KFC_MIN_FREQ = 400000;
-static unsigned int KFC_MAX_FREQ = 1300000;
-static unsigned int CPU_MIN_FREQ = 700000;
-static unsigned int CPU_MAX_FREQ = 1900000;
+static unsigned int KFC_MIN_FREQ = 200000;
+static unsigned int KFC_MAX_FREQ = 1400000;
+static unsigned int CPU_MIN_FREQ = 400000;
+static unsigned int CPU_MAX_FREQ = 2100000;
 module_param_named(kfc_min_freq, KFC_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(kfc_max_freq, KFC_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(cpu_min_freq, CPU_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
