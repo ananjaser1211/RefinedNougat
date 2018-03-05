@@ -17,6 +17,8 @@
 #include <linux/sort.h>
 #include <linux/reboot.h>
 #include <linux/debugfs.h>
+#include <linux/sysfs.h>
+#include <linux/exynos-interface.h>
 
 #include <linux/fs.h>
 #include <asm/segment.h>
@@ -31,8 +33,15 @@
 #else
 #define NORMALMIN_FREQ	500000
 #endif
-#define POLLING_MSEC	100
+#define POLLING_MSEC_DISP_ON	1000
+#define POLLING_MSEC_DISP_OFF	100
 #define DEFAULT_LOW_STAY_THRSHD	0
+
+#define MIN_NUM_ONLINE_CPU	1
+#define MAX_NUM_ONLINE_CPU	NR_CPUS
+
+unsigned int min_num_cpu;
+unsigned int max_num_cpu;
 
 struct cpu_load_info {
 	cputime64_t cpu_idle;
@@ -46,8 +55,14 @@ static DEFINE_MUTEX(dm_hotplug_lock);
 static DEFINE_MUTEX(thread_lock);
 static DEFINE_MUTEX(big_hotplug_lock);
 static DEFINE_MUTEX(little_hotplug_in_lock);
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static DEFINE_MUTEX(thread_manage_lock);
+#endif
 
 static struct task_struct *dm_hotplug_task;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static bool thread_start = false;
+#endif
 static unsigned int low_stay_threshold = DEFAULT_LOW_STAY_THRSHD;
 static int cpu_util[NR_CPUS];
 static unsigned int cur_load_freq = 0;
@@ -94,14 +109,17 @@ static void calc_load(void);
 
 static enum hotplug_cmd prev_cmd = CMD_NORMAL;
 static enum hotplug_cmd exe_cmd;
-static unsigned int delay = POLLING_MSEC;
-static unsigned int out_delay = POLLING_MSEC;
-static unsigned int in_delay = POLLING_MSEC;
+static unsigned int delay = POLLING_MSEC_DISP_ON;
+static unsigned int out_delay = POLLING_MSEC_DISP_ON;
+static unsigned int in_delay = POLLING_MSEC_DISP_ON;
 
 #if defined(CONFIG_SCHED_HMP)
 static struct workqueue_struct *hotplug_wq;
 #endif
 static struct workqueue_struct *force_hotplug_wq;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static struct workqueue_struct *thread_manage_wq;
+#endif
 
 static int dm_hotplug_disable = 0;
 
@@ -109,7 +127,11 @@ static int exynos_dm_hotplug_disabled(void)
 {
 	return dm_hotplug_disable;
 }
+#ifdef CONFIG_ARGOS
+void exynos_dm_hotplug_enable(void)
+#else
 static void exynos_dm_hotplug_enable(void)
+#endif
 {
 	mutex_lock(&dm_hotplug_lock);
 	if (!exynos_dm_hotplug_disabled()) {
@@ -123,8 +145,11 @@ static void exynos_dm_hotplug_enable(void)
 		disable_dm_hotplug_before_suspend--;
 	mutex_unlock(&dm_hotplug_lock);
 }
-
+#ifdef CONFIG_ARGOS
+void exynos_dm_hotplug_disable(void)
+#else
 static void exynos_dm_hotplug_disable(void)
+#endif
 {
 	mutex_lock(&dm_hotplug_lock);
 	dm_hotplug_disable++;
@@ -315,6 +340,90 @@ static ssize_t store_dm_hotplug_delay(struct kobject *kobj, struct attribute *at
 		delay = in_delay;
 	else
 		delay = out_delay;
+	return count;
+}
+
+static ssize_t show_cpucore_table(struct kobject *kobj,
+			     struct attribute *attr, char *buf)
+{
+	int i, num_cpu, count = 0;
+
+	num_cpu = num_online_cpus();
+	for (i = num_cpu; i > 0; i--)
+		count += sprintf(&buf[count], "%d ", i);
+
+	count += sprintf(&buf[count], "\n");
+	return count;
+}
+
+static ssize_t show_cpucore_min_num_limit(struct kobject *kobj,
+			     struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", min_num_cpu);
+}
+
+static ssize_t show_cpucore_max_num_limit(struct kobject *kobj,
+			     struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", max_num_cpu);
+}
+
+static ssize_t store_cpucore_min_num_limit(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int input;
+
+	if (!sscanf(buf, "%u", &input))
+		return -EINVAL;
+
+	if (input < 0 || input > 7) {
+		pr_err("Must keep input range 0 ~ 7\n");
+		return -EINVAL;
+	}
+
+	pr_info("Not yet supported\n");
+
+	min_num_cpu = input;
+
+	return count;
+}
+
+static ssize_t store_cpucore_max_num_limit(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int input, delta, cpu;
+
+	if (!sscanf(buf, "%u", &input))
+		return -EINVAL;
+
+	if (input < 1 || input > 8) {
+		pr_err("Must keep input range 1 ~ 8\n");
+		return -EINVAL;
+	}
+
+	delta = input - num_online_cpus();
+
+	if (delta > 0) {
+		cpu = 1;
+		while (delta) {
+			if (!cpu_online(cpu)) {
+				cpu_up(cpu);
+				delta--;
+			}
+			cpu++;
+		}
+	} else if (delta < 0) {
+		cpu = 7;
+		while (delta) {
+			if (cpu_online(cpu)) {
+				cpu_down(cpu);
+				delta++;
+			}
+			cpu--;
+		}
+	}
+
+	max_num_cpu = input;
 
 	return count;
 }
@@ -340,6 +449,20 @@ static struct global_attr dm_hotplug_stay_threshold =
 static struct global_attr dm_hotplug_delay =
 		__ATTR(dm_hotplug_delay, S_IRUGO | S_IWUSR,
 			show_dm_hotplug_delay, store_dm_hotplug_delay);
+
+static struct sysfs_attr cpucore_table =
+		__ATTR(cpucore_table, S_IRUGO,
+			show_cpucore_table, NULL);
+			
+static struct sysfs_attr cpucore_min_num_limit =
+		__ATTR(cpucore_min_num_limit, S_IRUGO | S_IWUSR,
+			show_cpucore_min_num_limit,
+			store_cpucore_min_num_limit);
+			
+static struct sysfs_attr cpucore_max_num_limit =
+		__ATTR(cpucore_max_num_limit, S_IRUGO | S_IWUSR,
+			show_cpucore_max_num_limit,
+			store_cpucore_max_num_limit);
 #endif
 
 static inline u64 get_cpu_idle_time_jiffy(unsigned int cpu, u64 *wall)
@@ -386,6 +509,33 @@ static inline cputime64_t get_cpu_iowait_time(unsigned int cpu, cputime64_t *wal
 	return iowait_time;
 }
 
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static void thread_manage_work(struct work_struct *work)
+{
+	mutex_lock(&thread_manage_lock);
+	if (thread_start) {
+		dm_hotplug_task =
+			kthread_create(on_run, NULL, "thread_hotplug");
+		if (IS_ERR(dm_hotplug_task)) {
+			pr_err("Failed in creation of thread.\n");
+			return;
+		}
+
+		wake_up_process(dm_hotplug_task);
+	} else {
+		if (dm_hotplug_task) {
+			kthread_stop(dm_hotplug_task);
+			dm_hotplug_task = NULL;
+			if (!dynamic_hotplug(CMD_NORMAL))
+				prev_cmd = CMD_NORMAL;
+		}
+	}
+	mutex_unlock(&thread_manage_lock);
+}
+
+static DECLARE_WORK(manage_work, thread_manage_work);
+#endif
+
 static int fb_state_change(struct notifier_block *nb,
 		unsigned long val, void *data)
 {
@@ -409,6 +559,17 @@ static int fb_state_change(struct notifier_block *nb,
 	case FB_BLANK_POWERDOWN:
 		lcd_is_on = false;
 		pr_info("LCD is off\n");
+
+		delay = POLLING_MSEC_DISP_OFF;
+
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+		if (thread_manage_wq) {
+			if (work_pending(&manage_work))
+				flush_work(&manage_work);
+			thread_start = true;
+			queue_work(thread_manage_wq, &manage_work);
+		}
+#endif
 		break;
 	case FB_BLANK_UNBLANK:
 		/*
@@ -418,6 +579,17 @@ static int fb_state_change(struct notifier_block *nb,
 		 */
 		lcd_is_on = true;
 		pr_info("LCD is on\n");
+
+		delay = POLLING_MSEC_DISP_ON;
+
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+		if (thread_manage_wq) {
+			if (work_pending(&manage_work))
+				flush_work(&manage_work);
+			thread_start = false;
+			queue_work(thread_manage_wq, &manage_work);
+		}
+#endif
 		break;
 	default:
 		break;
@@ -430,18 +602,11 @@ static struct notifier_block fb_block = {
 	.notifier_call = fb_state_change,
 };
 
-#if defined(CONFIG_SENSORS_FP_LOCKSCREEN_MODE)
-extern bool fp_lockscreen_mode;
-#else
-static bool fp_lockscreen_mode = false;
-#endif
-
 static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 {
 	int i = 0;
 	int ret = 0;
 	int hotplug_out_limit = 0;
-	int tmp_nr_sleep_prepare_cpus = 0;
 
 	if (exynos_dm_hotplug_disabled())
 		return 0;
@@ -452,22 +617,14 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 			goto blk_out;
 
 		if (cmd == CMD_SLEEP_PREPARE) {
-			if(fp_lockscreen_mode)
-				/* for finger-print boosting */
-				tmp_nr_sleep_prepare_cpus = nr_sleep_prepare_cpus + 1;
-			else
-				tmp_nr_sleep_prepare_cpus = nr_sleep_prepare_cpus;
-			printk(KERN_INFO "nr_sleep_prepare_cpus : %d, tmp_nr_sleep_prepare_cpus : %d\n", 
-				nr_sleep_prepare_cpus, tmp_nr_sleep_prepare_cpus);
-
-			for (i = setup_max_cpus - 1; i >= tmp_nr_sleep_prepare_cpus; i--) {
+			for (i = max_num_cpu - 1; i >= NR_CA7; i--) {
 				if (cpu_online(i)) {
 					ret = cpu_down(i);
 					if (ret)
 						goto blk_out;
 				}
 			}
-			for (i = 1; i < tmp_nr_sleep_prepare_cpus; i++) {
+			for (i = 1; i < nr_sleep_prepare_cpus; i++) {
 				if (!cpu_online(i)) {
 					ret = cpu_up(i);
 					if (ret)
@@ -475,7 +632,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 				}
 			}
 		}else if (cmd == CMD_BIG_OUT && !in_low_power_mode) {
-			for (i = setup_max_cpus - 1; i >= NR_CA7; i--) {
+			for (i = max_num_cpu - 1; i >= NR_CA7; i--) {
 				if (cpu_online(i)) {
 					ret = cpu_down(i);
 					if (ret)
@@ -498,7 +655,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 				if (little_hotplug_in)
 					hotplug_out_limit = NR_CA7 - 2;
 
-				for (i = setup_max_cpus - 1; i > hotplug_out_limit; i--) {
+				for (i = max_num_cpu - 1; i > hotplug_out_limit; i--) {
 					if (cpu_online(i)) {
 						ret = cpu_down(i);
 						if (ret)
@@ -515,7 +672,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 			if (in_low_power_mode)
 				goto blk_out;
 
-			for (i = NR_CA7; i < setup_max_cpus; i++) {
+			for (i = NR_CA7; i < max_num_cpu; i++) {
 				if (!cpu_online(i)) {
 					ret = cpu_up(i);
 					if (ret)
@@ -542,7 +699,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 				}
 			} else {
 				if (lcd_is_on) {
-					for (i = NR_CA7; i < setup_max_cpus; i++) {
+					for (i = NR_CA7; i < max_num_cpu; i++) {
 						if (do_hotplug_out)
 							goto blk_out;
 
@@ -564,7 +721,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 						}
 					}
 				} else {
-					for (i = 1; i < setup_max_cpus; i++) {
+					for (i = 1; i < max_num_cpu; i++) {
 						if (do_hotplug_out && i >= NR_CA7)
 							goto blk_out;
 
@@ -583,7 +740,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 		if (do_disable_hotplug)
 			goto blk_out;
 
-		for (i = setup_max_cpus - 1; i > 0; i--) {
+		for (i = max_num_cpu - 1; i > 0; i--) {
 			if (cpu_online(i)) {
 				ret = cpu_down(i);
 				if (ret)
@@ -594,7 +751,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 		if (in_suspend_prepared)
 			goto blk_out;
 
-		for (i = 1; i < setup_max_cpus; i++) {
+		for (i = 1; i < max_num_cpu; i++) {
 			if (!cpu_online(i)) {
 				ret = cpu_up(i);
 				if (ret)
@@ -761,7 +918,7 @@ static DECLARE_WORK(hotplug_in_work, event_hotplug_in_work);
 
 void event_hotplug_in(void)
 {
-	if (hotplug_wq)
+    if (hotplug_wq && lcd_is_on && !in_suspend_prepared)
 		queue_work(hotplug_wq, &hotplug_in_work);
 }
 #endif
@@ -883,6 +1040,10 @@ static enum hotplug_cmd diagnose_condition(void)
 
 #if defined(CONFIG_CPU_FREQ_GOV_INTERACTIVE)
 	normal_min_freq = cpufreq_interactive_get_hispeed_freq(0);
+	if (!normal_min_freq)
+		normal_min_freq = NORMALMIN_FREQ;
+#elif defined(CONFIG_CPU_FREQ_GOV_CAFACTIVE)
+	normal_min_freq = cpufreq_cafactive_get_hispeed_freq(0);
 	if (!normal_min_freq)
 		normal_min_freq = NORMALMIN_FREQ;
 #else
@@ -1096,16 +1257,20 @@ const static struct file_operations cputime_fops = {
 static int __init dm_cpu_hotplug_init(void)
 {
 	int ret = 0;
+	min_num_cpu = 0;
+	max_num_cpu = NR_CPUS;
 #ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
 	struct cpufreq_policy *policy;
 #endif
 
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	dm_hotplug_task =
 		kthread_create(on_run, NULL, "thread_hotplug");
 	if (IS_ERR(dm_hotplug_task)) {
 		pr_err("Failed in creation of thread.\n");
 		return -EINVAL;
 	}
+#endif
 
 	fb_register_client(&fb_block);
 
@@ -1146,6 +1311,27 @@ static int __init dm_cpu_hotplug_init(void)
 			__func__);
 		goto err_dm_hotplug_delay;
 	}
+
+	ret = sysfs_create_file(power_kobj, &cpucore_table.attr);
+	if (ret) {
+		pr_err("%s: failed to create cpucore_table sysfs interface\n",
+			__func__);
+		goto err_cpucore_table;
+	}
+
+	ret = sysfs_create_file(power_kobj, &cpucore_min_num_limit.attr);
+	if (ret) {
+		pr_err("%s: failed to create cpucore_min_num_limit sysfs interface\n",
+			__func__);
+		goto err_cpucore_min_num_limit;
+	}
+
+	ret = sysfs_create_file(power_kobj, &cpucore_max_num_limit.attr);
+	if (ret) {
+		pr_err("%s: failed to create cpucore_max_num_limit sysfs interface\n",
+			__func__);
+		goto err_cpucore_max_num_limit;
+	}
 #endif
 
 #ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
@@ -1174,6 +1360,14 @@ static int __init dm_cpu_hotplug_init(void)
 		goto err_force_wq;
 	}
 
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+	thread_manage_wq = create_singlethread_workqueue("thread-manage");
+	if (!thread_manage_wq) {
+		ret = -ENOMEM;
+		goto err_thread_wq;
+	}
+#endif
+
 	register_pm_notifier(&exynos_dm_hotplug_nb);
 	register_reboot_notifier(&exynos_dm_hotplug_reboot_nb);
 
@@ -1184,9 +1378,15 @@ static int __init dm_cpu_hotplug_init(void)
 		pr_err("%s: debugfs_create_file() failed\n", __func__);
 	}
 
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	wake_up_process(dm_hotplug_task);
+#endif
 
 	return ret;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+err_thread_wq:
+	destroy_workqueue(force_hotplug_wq);
+#endif
 err_force_wq:
 #if defined(CONFIG_SCHED_HMP)
 	destroy_workqueue(hotplug_wq);
@@ -1198,6 +1398,12 @@ err_policy:
 #ifdef CONFIG_PM
 	sysfs_remove_file(power_kobj, &dm_hotplug_delay.attr);
 err_dm_hotplug_delay:
+	sysfs_remove_file(power_kobj, &cpucore_table.attr);
+err_cpucore_table:
+	sysfs_remove_file(power_kobj, &cpucore_min_num_limit.attr);
+err_cpucore_min_num_limit:
+	sysfs_remove_file(power_kobj, &cpucore_max_num_limit.attr);
+err_cpucore_max_num_limit:
 	sysfs_remove_file(power_kobj, &dm_hotplug_stay_threshold.attr);
 err_dm_hotplug_stay_threshold:
 #if defined(CONFIG_SCHED_HMP)
@@ -1210,7 +1416,9 @@ err_little_core_hotplug_in:
 err_enable_dm_hotplug:
 #endif
 	fb_unregister_client(&fb_block);
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	kthread_stop(dm_hotplug_task);
+#endif
 
 	return ret;
 }
