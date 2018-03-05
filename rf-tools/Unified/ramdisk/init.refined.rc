@@ -12,6 +12,13 @@ on early-init
 on boot
     start fake_knox
 
+#unify sysfs node for GPU
+    chmod 0444 /sys/devices/platform/gpusysfs/gpu_clock
+    chmod 0644 /sys/devices/platform/gpusysfs/gpu_governor
+    chmod 0644 /sys/devices/platform/gpusysfs/fps
+    chown system shell /sys/devices/platform/gpusysfs/gpu_governor
+    chown system shell /sys/devices/platform/gpusysfs/fps
+
 on property:sys.boot_completed=1
     start sysinit
 	start wakelock
