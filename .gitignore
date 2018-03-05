@@ -6763,4 +6763,18 @@ drivers/gpu/arm/t7xx/r15p0/platform/exynos/gpu_utilization.o
 drivers/gpu/arm/t7xx/r15p0/platform/exynos/mali_kbase_platform.o
 kernel/trace/.gpu-traces.o.cmd
 kernel/trace/gpu-traces.o
+block/.fifo-iosched.o.cmd
+block/.fiops-iosched.o.cmd
+block/.sio-iosched.o.cmd
+block/.sioplus-iosched.o.cmd
+block/.tripndroid-iosched.o.cmd
+block/.vr-iosched.o.cmd
+block/.zen-iosched.o.cmd
+block/fifo-iosched.o
+block/fiops-iosched.o
+block/sio-iosched.o
+block/sioplus-iosched.o
+block/tripndroid-iosched.o
+block/vr-iosched.o
+block/zen-iosched.o
 
