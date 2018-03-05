@@ -2192,13 +2192,6 @@ enum devfreq_mif_clk {
 	MIF_CLK_COUNT,
 };
 
-enum devfreq_memorysize {
-	LP3_2GB,
-	LP3_3GB,
-	LP3_4GB,
-	LP3_UNKNOWN,
-};
-
 struct devfreq_clk_list devfreq_mif_clk[MIF_CLK_COUNT] = {
 	{"fout_mem0_pll",},
 	{"fout_mem1_pll",},
@@ -2609,7 +2602,7 @@ enum FW_MIF_DVFS_LEVELS {
 	CNT_FW_MIF_LEVELS,
 };
 
-struct devfreq_mif_timing_parameter dmc_timing_parameter[CNT_FW_MIF_LEVELS];
+struct devfreq_mif_timing_parameter dmc_timing_parameter_3gb[CNT_FW_MIF_LEVELS];
 
 static DEFINE_MUTEX(media_mutex);
 static unsigned int media_enabled_fimc_lite;
@@ -2908,47 +2901,6 @@ static void exynos5_devfreq_waiting_mux(struct devfreq_data_mif *data)
 	}
 }
 
-static enum devfreq_memorysize exynos5_devfreq_mif_memory_size(struct devfreq_data_mif *data)
-{
-	unsigned int mrr_status;
-	unsigned int mem_type;
-	unsigned int density;
-	unsigned int bus_width;
-
-	/* Issuing MRR Command */
-	__raw_writel(0x09010000, data->base_drex0 + 0x10);
-	mrr_status = __raw_readl(data->base_drex0 + 0x54);
-
-	mem_type = (mrr_status & 0x3);
-	density = ((mrr_status >> 2) & 0xF);
-	bus_width = ((mrr_status >> 6) & 0x3);
-
-	if (mem_type == 0x3) {
-		if (bus_width == 0x0) {
-			switch (density) {
-				case 0x6:
-					pr_info("DEVFREQ(MIF) : Memory Size : 2GB\n");
-					return LP3_2GB;
-				case 0xE:
-					pr_info("DEVFREQ(MIF) : Memory Size : 3GB\n");
-					return LP3_3GB;
-				case 0x7:
-					pr_info("DEVFREQ(MIF) : Memory Size : 4GB\n");
-					return LP3_4GB;
-				default:
-					pr_err("DEVFREQ(MIF) : can't support memory size %d\n", density);
-					break;
-			}
-		} else {
-			pr_err("DEVFREQ(MIF) : can't support bus width which is not 32\n");
-		}
-	} else {
-		pr_err("DEVFREQ(MIF) : can't support device which is not S8 SDRAM\n");
-	}
-
-	return LP3_UNKNOWN;
-}
-
 static int exynos5_devfreq_mif_set_freq(struct devfreq_data_mif *data,
 					int target_idx,
 					int old_idx)
@@ -3208,7 +3160,7 @@ static int exynos5_devfreq_mif_set_phy(struct devfreq_data_mif *data,
 	struct devfreq_mif_timing_parameter *cur_parameter;
 	unsigned int tmp;
 
-	cur_parameter = &dmc_timing_parameter[target_idx];
+	cur_parameter = &dmc_timing_parameter_3gb[target_idx];
 
 	if (use_mif_timing_set_0) {
 		tmp = __raw_readl(data->base_lpddr_phy0 + 0xBC);
@@ -3242,7 +3194,7 @@ static int exynos5_devfreq_mif_set_and_change_timing_set(struct devfreq_data_mif
 	struct devfreq_mif_timing_parameter *cur_parameter;
 	unsigned int tmp;
 
-	cur_parameter = &dmc_timing_parameter[target_idx];
+	cur_parameter = &dmc_timing_parameter_3gb[target_idx];
 
 	if (use_mif_timing_set_0) {
 		__raw_writel(cur_parameter->timing_row, data->base_drex0 + 0xE4);
@@ -4127,7 +4079,6 @@ int exynos5433_devfreq_mif_init(struct devfreq_data_mif *data)
 {
 	int i;
 	int ret = 0;
-	const DVFS_MIF_DMC_PARAM_TABLE *p_aDvfsMifParam = NULL;
 
 	timeout_table = timeout_fullhd;
 	media_enabled_fimc_lite = false;
@@ -4145,33 +4096,20 @@ int exynos5433_devfreq_mif_init(struct devfreq_data_mif *data)
 	data->mif_dynamic_setting = exynos5_devfreq_mif_dynamic_setting;
 	data->mif_set_volt = exynos5_devfreq_mif_set_volt;
 
-	exynos5_devfreq_mif_init_parameter(data);
-	switch (exynos5_devfreq_mif_memory_size(data)) {
-	case LP3_2GB:
-		p_aDvfsMifParam = g_aDvfsMifParam_2gb; 
-		break;
-	case LP3_3GB:
-		p_aDvfsMifParam = g_aDvfsMifParam_3gb;
-		break;
-	default:
-		pr_err("DEVFREQ(MIF) : Failed to get Memory size!!\n");
-		return -EINVAL;
-	}
-
 	for (i = 0; i < CNT_FW_MIF_LEVELS; i++) {
-		int RL = p_aDvfsMifParam[i].uDvfsRdLat;
+		int RL = g_aDvfsMifParam[i].uDvfsRdLat;
 
-		dmc_timing_parameter[i].timing_row = p_aDvfsMifParam[i].uTimingRow;
-		dmc_timing_parameter[i].timing_data = p_aDvfsMifParam[i].uTimingData;
-		dmc_timing_parameter[i].timing_power = p_aDvfsMifParam[i].uTimingPower;
-		dmc_timing_parameter[i].rd_fetch = p_aDvfsMifParam[i].uRdFetch;
-		dmc_timing_parameter[i].timing_rfcpb = p_aDvfsMifParam[i].uRFCpb;
-		dmc_timing_parameter[i].dvfs_con1 = ((RL<<24)|(RL<<16)|0x2121);
-		dmc_timing_parameter[i].mif_drex_mr_data[0] = p_aDvfsMifParam[i].uMRW0;
-		dmc_timing_parameter[i].mif_drex_mr_data[1] = p_aDvfsMifParam[i].uMRW1;
-		dmc_timing_parameter[i].mif_drex_mr_data[2] = p_aDvfsMifParam[i].uMRW2;
-		dmc_timing_parameter[i].mif_drex_mr_data[3] = p_aDvfsMifParam[i].uMRW3;
-		dmc_timing_parameter[i].dvfs_offset = p_aDvfsMifParam[i].uDvfsOffset;
+		dmc_timing_parameter_3gb[i].timing_row = g_aDvfsMifParam[i].uTimingRow;
+		dmc_timing_parameter_3gb[i].timing_data = g_aDvfsMifParam[i].uTimingData;
+		dmc_timing_parameter_3gb[i].timing_power = g_aDvfsMifParam[i].uTimingPower;
+		dmc_timing_parameter_3gb[i].rd_fetch = g_aDvfsMifParam[i].uRdFetch;
+		dmc_timing_parameter_3gb[i].timing_rfcpb = g_aDvfsMifParam[i].uRFCpb;
+		dmc_timing_parameter_3gb[i].dvfs_con1 = ((RL<<24)|(RL<<16)|0x2121);
+		dmc_timing_parameter_3gb[i].mif_drex_mr_data[0] = g_aDvfsMifParam[i].uMRW0;
+		dmc_timing_parameter_3gb[i].mif_drex_mr_data[1] = g_aDvfsMifParam[i].uMRW1;
+		dmc_timing_parameter_3gb[i].mif_drex_mr_data[2] = g_aDvfsMifParam[i].uMRW2;
+		dmc_timing_parameter_3gb[i].mif_drex_mr_data[3] = g_aDvfsMifParam[i].uMRW3;
+		dmc_timing_parameter_3gb[i].dvfs_offset = g_aDvfsMifParam[i].uDvfsOffset;
 	}
 
 	data->max_state = MIF_LV_COUNT;
@@ -4184,6 +4122,7 @@ int exynos5433_devfreq_mif_init(struct devfreq_data_mif *data)
 	}
 
 	exynos5_devfreq_mif_init_clock();
+	exynos5_devfreq_mif_init_parameter(data);
 	data->dll_status = ((__raw_readl(data->base_lpddr_phy0 + 0xB0) & (0x1 << 5)) != 0);
 	pr_info("DEVFREQ(MIF) : default dll satus : %s\n", (data->dll_status ? "on" : "off"));
 

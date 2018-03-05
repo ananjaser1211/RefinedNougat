@@ -285,7 +285,7 @@ static int exynos5_devfreq_mif_notifier(struct notifier_block *nb, unsigned long
 static int exynos5_devfreq_mif_reboot_notifier(struct notifier_block *nb, unsigned long val,
 						void *v)
 {
-	unsigned long freq = 222000;
+	unsigned long freq = exynos5433_qos_mif.default_qos;
 	struct devfreq_data_mif *data = dev_get_drvdata(mif_dev);
 	struct devfreq *devfreq_mif = data->devfreq;
 

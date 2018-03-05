@@ -222,7 +222,7 @@ static int exynos5_devfreq_int_notifier(struct notifier_block *nb, unsigned long
 static int exynos5_devfreq_int_reboot_notifier(struct notifier_block *nb, unsigned long val,
 						void *v)
 {
-	unsigned long freq = 133000;
+	unsigned long freq = exynos5433_qos_int.default_qos;
 	struct devfreq_data_int *data = dev_get_drvdata(int_dev);
 	struct devfreq *devfreq_int = data->devfreq;
 
