@@ -62,9 +62,9 @@
 #endif
 
 static unsigned int KFC_MIN_FREQ = 200000;
-static unsigned int KFC_MAX_FREQ = 1400000;
+static unsigned int KFC_MAX_FREQ = 1600000;
 static unsigned int CPU_MIN_FREQ = 200000;
-static unsigned int CPU_MAX_FREQ = 2100000;
+static unsigned int CPU_MAX_FREQ = 2300000;
 module_param_named(kfc_min_freq, KFC_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(kfc_max_freq, KFC_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(cpu_min_freq, CPU_MIN_FREQ, uint, S_IWUSR | S_IRUGO);

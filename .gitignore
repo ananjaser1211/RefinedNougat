@@ -6789,4 +6789,7 @@ net/ipv4/tcp_vegas.o
 net/ipv4/tcp_veno.o
 net/ipv4/tcp_westwood.o
 net/ipv4/tcp_yeah.o
+.5249.tmp
+drivers/cpufreq/.cpufreq_interextrem.o.cmd
+drivers/cpufreq/cpufreq_interextrem.o
 
