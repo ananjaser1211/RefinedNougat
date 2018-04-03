@@ -32,9 +32,9 @@ debug.atrace.tags.enableflags=0
 #
 # BOOTIMAGE_BUILD_PROPERTIES
 #
-ro.bootimage.build.date=Fri Dec 1 11:15:36 KST 2017
-ro.bootimage.build.date.utc=1512094536
-ro.bootimage.build.fingerprint=samsung/nobleltejv/noblelte:7.0/NRD90M/N920CXXU3CQL1:user/test-keys
+ro.bootimage.build.date=Thu Mar 8 16:08:59 KST 2018
+ro.bootimage.build.date.utc=1520492939
+ro.bootimage.build.fingerprint=samsung/nobleltejv/noblelte:7.0/NRD90M/N920CXXS4CRC3:user/test-keys
 
 # Possible Screen mirroring / AllShare Cast fix
 wlan.wfd.hdcp=disable
