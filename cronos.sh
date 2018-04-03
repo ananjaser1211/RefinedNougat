@@ -17,9 +17,7 @@
 # Kernel Variables
 CR_VERSION=v1.1_ALPHA
 CR_DATE=$(date +%Y%m%d)
-CR_TC_GCC=/home/elite/android/toolchain/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-CR_TC_UB=/home/elite/android/toolchain/ubertc-aarch64-4.9/bin/aarch64-linux-android-
-CR_TC_GCCARM=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
+CR_TC=/home/ananjaser/Desktop/arm-eabi-4.8/bin/arm-eabi-
 CR_DIR=$(pwd)
 CR_OUT=$CR_DIR/rf-tools/out
 CR_DTS=arch/arm/boot/dts
@@ -46,7 +44,7 @@ echo "----------------------------------------------"
 echo "Building zImage for $CR_VARIANT"
 echo " "
 export $CR_ARCH
-export CROSS_COMPILE=$CR_TC_GCCARM
+export CROSS_COMPILE=$CR_TC
 export LOCALVERSION=-Refined_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 make  $CR_CONFG
@@ -56,7 +54,7 @@ echo "----------------------------------------------"
 echo "Building DTB for $CR_VARIANT"
 echo " "
 export $CR_ARCH
-export CROSS_COMPILE=$CR_TC_GCCARM	
+export CROSS_COMPILE=$CR_TC	
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 make  $CR_CONFG
 make $CR_DTSFILES
