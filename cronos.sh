@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # Kernel Variables
-CR_VERSION=v1.1_ALPHA
+CR_VERSION=v1.2
 CR_DATE=$(date +%Y%m%d)
 CR_TC=/home/ananjaser/Desktop/arm-eabi-4.8/bin/arm-eabi-
 CR_DIR=$(pwd)
