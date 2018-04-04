@@ -992,7 +992,11 @@ static int exynos_cpufreq_pm_notifier(struct notifier_block *notifier,
 
 		volt = max(get_boot_volt(CA15),
 				get_freq_volt(CA15, freqCA15));
-		BUG_ON(volt <= 0);
+		if ( volt <= 0) {
+			printk("oops, strange voltage CA15 -> boot volt:%d, get_freq_volt:%d, freqCA15:%d \n",
+				get_boot_volt(CA15), get_freq_volt(CA15, freqCA15), freqCA15);
+			BUG_ON(volt <= 0);
+		}
 		volt = get_limit_voltage(volt);
 
 		set_abb_first_than_volt = false;
@@ -1461,9 +1465,7 @@ static ssize_t store_volt_table(struct kobject *kobj, struct attribute *attr,
 		}
 	}
 
-#ifdef CONFIG_CPU_THERMAL_IPA
 	ipa_update();
-#endif
 
 	mutex_unlock(&cpufreq_lock);
 
@@ -1923,10 +1925,6 @@ static int exynos_kfc_min_qos_handler(struct notifier_block *b, unsigned long va
 
 #if defined(CONFIG_CPU_FREQ_GOV_INTERACTIVE)
 	threshold_freq = cpufreq_interactive_get_hispeed_freq(0);
-	if (!threshold_freq)
-		threshold_freq = 1000000;	/* 1.0GHz */
-#elif defined(CONFIG_CPU_FREQ_GOV_CAFACTIVE)
-	threshold_freq = cpufreq_cafactive_get_hispeed_freq(0);
 	if (!threshold_freq)
 		threshold_freq = 1000000;	/* 1.0GHz */
 #else
