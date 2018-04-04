@@ -508,9 +508,9 @@ int __init exynos5_cpufreq_CA15_init(struct exynos_dvfs_info *info)
 #ifdef CONFIG_SEC_PM
 	set_boot_cpu_qos_freq(info, L10);
 #else
-	/* booting frequency is 1.7GHz */
-	info->boot_cpu_min_qos = exynos5433_freq_table_CA15[L8].frequency;
-	info->boot_cpu_max_qos = exynos5433_freq_table_CA15[L8].frequency;
+	/* booting frequency is 1.9GHz */
+	info->boot_cpu_min_qos = exynos5433_freq_table_CA15[L6].frequency;
+	info->boot_cpu_max_qos = exynos5433_freq_table_CA15[L6].frequency;
 #endif
 	/* reboot limit frequency is 1.2GHz */
 	info->reboot_limit_freq = exynos5433_freq_table_CA15[L13].frequency;
