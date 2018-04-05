@@ -17,7 +17,7 @@
 # Kernel Variables
 CR_VERSION=v1.2
 CR_DATE=$(date +%Y%m%d)
-CR_TC=/home/ananjaser/Desktop/arm-eabi-4.8/bin/arm-eabi-
+CR_TC=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
 CR_DIR=$(pwd)
 CR_OUT=$CR_DIR/rf-tools/out
 CR_DTS=arch/arm/boot/dts
