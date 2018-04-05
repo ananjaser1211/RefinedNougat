@@ -142,8 +142,6 @@
 #define MAX77843_BAT_DTLS                       0x70
 #define MAX77843_BAT_DTLS_SHIFT                 4
 
-#define SIOP_INPUT_LIMIT_CURRENT                1200
-#define SIOP_CHARGING_LIMIT_CURRENT             1000
 #define SIOP_WIRELESS_INPUT_LIMIT_CURRENT       660
 #define SIOP_WIRELESS_CHARGING_LIMIT_CURRENT    780
 #define SLOW_CHARGING_CURRENT_STANDARD          400
