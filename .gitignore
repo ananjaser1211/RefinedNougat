@@ -6792,4 +6792,19 @@ net/ipv4/tcp_yeah.o
 .5249.tmp
 drivers/cpufreq/.cpufreq_interextrem.o.cmd
 drivers/cpufreq/cpufreq_interextrem.o
+drivers/cpufreq/.cpufreq_alucard.o.cmd
+drivers/cpufreq/.cpufreq_bioshock.o.cmd
+drivers/cpufreq/.cpufreq_conservativex.o.cmd
+drivers/cpufreq/.cpufreq_impulse.o.cmd
+drivers/cpufreq/.cpufreq_intelliactive.o.cmd
+drivers/cpufreq/.cpufreq_lionheart.o.cmd
+drivers/cpufreq/.lazyplug.o.cmd
+drivers/cpufreq/cpufreq_alucard.o
+drivers/cpufreq/cpufreq_bioshock.o
+drivers/cpufreq/cpufreq_conservativex.o
+drivers/cpufreq/cpufreq_impulse.o
+drivers/cpufreq/cpufreq_intelliactive.o
+drivers/cpufreq/cpufreq_lionheart.o
+drivers/cpufreq/lazyplug.o
+rf-tools/out/PLACEHOLDER
 
