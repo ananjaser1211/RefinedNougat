@@ -1461,6 +1461,13 @@ service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF0000000000000
     user system
     group system
     oneshot
+    
+# Sensorhub service
+service sensorhubservice /system/bin/sensorhubservice
+    class main
+    user system
+    group input
+	seclabel u:r:sensorhubservice:s0
 
 service flash_recovery /system/bin/install-recovery.sh
     class main
