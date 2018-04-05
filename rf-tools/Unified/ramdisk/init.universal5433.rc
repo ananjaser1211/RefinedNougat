@@ -612,9 +612,10 @@ on fs
 # SensorHub (Location Hub)
 service lhd /system/bin/lhd /system/etc/lhd.conf
     class main
-    user gps
+    user root
     group system inet net_raw
     ioprio be 0
+	disabled
 
 
 
