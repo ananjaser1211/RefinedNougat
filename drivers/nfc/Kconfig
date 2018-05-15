@@ -149,4 +149,6 @@ config SEC_NFC_LDO_CONTROL
 	  Say Y here to compile support for SEC NFC LDO CONTROL feature into the
 	  kernel.
 
+source "drivers/nfc/secnfc/Kconfig"
+
 endmenu
