@@ -1,7 +1,13 @@
 on fs
-service cpboot-daemon /sbin/cbd -d -tstem7400 -bh -mh -p 13
+# DIAG
+service DIAG-daemon /system/bin/diagexe
     class main
     user root
-    group radio cache inet misc audio sdcard_rw log sdcard_r shell
-    seclabel u:r:cbd:s0
+    group system radio inet net_raw
 
+# IMS Stack
+    service imsd /system/bin/imsd
+    class main
+    socket imsd stream 0660 system system
+    user root
+    group system radio net_raw inet net_admin

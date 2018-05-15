@@ -3,15 +3,12 @@
 # IMPORTANT: Do not create world writable files or directories.
 # This is a common source of Android security bugs.
 #
-
+import /init.refined.rc
 import /init.environ.rc
 import /init.usb.rc
 import /init.${ro.hardware}.rc
 import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
-import /init.trace.rc
-import /init.carrier.rc
-import /init.sec_debug.rc
 import /init.container.rc
 import /init.rilcommon.rc
 
@@ -1262,125 +1259,6 @@ on property:ro.debuggable=1
 # adbd is controlled via property triggers in init.<platform>.usb.rc
 service adbd /sbin/adbd --root_seclabel=u:r:su:s0
     class core
-    socket adbd stream 660 system system
-    disabled
-    seclabel u:r:adbd:s0
-
-# adbd on at boot in emulator
-on property:ro.kernel.qemu=1
-    start adbd
-
-service lmkd /system/bin/lmkd
-    class core
-    critical
-    socket lmkd seqpacket 0660 system system
-    writepid /dev/cpuset/system-background/tasks
-
-service scs /system/bin/scs
-    class main
-    user system
-    group system
-    oneshot
-
-service servicemanager /system/bin/servicemanager
-    class core
-    user system
-    group system
-    critical
-    onrestart restart healthd
-    onrestart restart zygote
-    onrestart restart media
-    onrestart restart surfaceflinger
-    onrestart restart drm
-    onrestart restart keystore
-    onrestart restart sensorhubservice
-    onrestart restart TvoutService_C
-
-service vold /system/bin/vold \
-        --blkid_context=u:r:blkid:s0 --blkid_untrusted_context=u:r:blkid_untrusted:s0 \
-        --fsck_context=u:r:fsck:s0 --fsck_untrusted_context=u:r:fsck_untrusted:s0
-    class core
-    socket vold stream 0660 root mount
-    socket cryptd stream 0660 root mount
-    ioprio be 2
-## Frigatebird
-    socket frigate stream 0660 system system
-## Knox
-    socket epm stream 0660 system system
-    socket ppm stream 0660 system system
-## Samsung ODE >>>
-    socket dir_enc_report stream 0660 root mount
-## Samsung ODE <<<
-
-service netd /system/bin/netd
-    class main
-    socket netd stream 0660 root system
-    socket dnsproxyd stream 0660 root inet
-    socket mdns stream 0660 root system
-    socket fwmarkd stream 0660 root inet
-
-service debuggerd /system/bin/debuggerd
-    class main
-    writepid /dev/cpuset/system-background/tasks
-
-service debuggerd64 /system/bin/debuggerd64
-    class main
-    writepid /dev/cpuset/system-background/tasks
-
-# icd
-service icd /system/bin/icd
-    class main
-    user system
-    group system log
-    onrestart check_icd
-    oneshot
-
-# RIL
-service ril-daemon /system/bin/rild
-    class main
-    socket rild stream 660 root radio
-    socket sap_uim_socket1 stream 660 bluetooth bluetooth
-    socket rild-debug stream 660 radio system
-#FSI {Tmm] Add Start (120615)
-    socket rild-cas stream 660  casdrm mmb
-#FSI {Tmm] Add End (120615)
-    user root
-    group radio cache inet misc audio sdcard_r sdcard_rw log vpn system
-    onrestart restart cpboot-daemon
-on property:persist.sys.cpboot=disable
-    stop ril-daemon
-    stop cpboot-daemon
-
-# AT Distributor for factory test
-service at_distributor /system/bin/at_distributor
-    class late_start
-    user root
-    group radio misc log
-
-# MobiCore startup
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
-    class core
-    user system
-    group system
-
-service surfaceflinger /system/bin/surfaceflinger
-    class core
-    user system
-    group graphics drmrpc
-    onrestart restart zygote
-    writepid /dev/cpuset/system-background/tasks
-    onrestart restart loc_launcher
-    
-service SIDESYNC_service /system/bin/ss_conn_daemon
-    class main
-    socket ss_conn_daemon stream 0666 system system
-    user system
-    group inet net_raw
-
-service ss_kb_service /system/bin/ss_kbservice_daemon
-    class main
-    user system
-    group system
 
 service drm /system/bin/drmserver
     class main
@@ -1428,6 +1306,14 @@ service powersnd /system/bin/samsungpowersoundplay
     group system
     disabled
     oneshot
+
+# Sensorhub service
+service sensorhubservice /system/bin/sensorhubservice
+    class main
+    user root
+    group input
+    seclabel u:r:sensorhubservice:s0
+    disabled
 
 # Don't revise bootanimation user&group settings.
 # A side-effect happens if you revise.
@@ -1555,27 +1441,8 @@ service charon /system/bin/charon
     disabled
     oneshot
 
-# eris daemon
-service eris /system/bin/eris
-    class main
-    socket eris stream 660 system system
-    user system
-    group system net_raw inet net_admin
-    oneshot
-    disabled
-
-# otp
-service otp /system/bin/otp_server
-  user system
-  group system 
-  disabled
-
-on property:persist.security.tlc.otp=1  
-  start otp
-  setprop persist.security.tlc.otp 0
-
 # ccm
-  service ccm /system/bin/tlc_server CCM
+service ccm /system/bin/tlc_server CCM
   user system
   group system 
   disabled
@@ -1585,7 +1452,7 @@ on property:persist.security.tlc.ccm=1
   setprop persist.security.tlc.ccm 0
 
 # dcm
-  service dcm /system/bin/tlc_server DCM
+service dcm /system/bin/tlc_server DCM
   user system
   group system 
   disabled
@@ -1609,75 +1476,59 @@ on property:persist.security.tlc.esecomm=1
   start esecomm
   setprop persist.security.tlc.esecomm 0
 
-# SEC_SELINUX
-service auditd /system/bin/auditd -k
+# IO stats Deamon
+service iod /system/bin/iod
+    user system
+    group shell
     class main
-    seclabel u:r:auditd:s0
-    disabled
     oneshot
-
-on property:selinux.sec.restorecon=1
-    restorecon_msc -RF /data
-    
-on property:sys.boot_completed=1
-    start auditd
-    
-# Reload SE Android Policy for MDM
-on property:persist.security.mdm.policy=1
-    setprop selinux.reload_policy 1
-# ] SEC_SELINUX_PORTING COMMON
-
-on property:selinux.sec.restorecon=1
-    restorecon_msc -RF /data
-    chown system system_access /data/security/aasa
-    chmod 2750 /data/security/aasa   
-    
-on property:sys.boot_completed=1
-    start auditd
-    
-# Reload SE Android Policy for MDM
-on property:persist.security.mdm.policy=1
-    setprop selinux.reload_policy 1
-# ] SEC_SELINUX_PORTING COMMON
+    disabled
 
 on property:sys.boot_completed=1
-    write /sys/block/mmcblk0/queue/scheduler cfq
-    write /sys/block/sda/queue/scheduler cfq
-	chown system system /sys/class/net/wlan0/queues/rx-0/rps_cpus
+    pdp result
+    start iod
 
 # icd
 on property:init.svc.media=restarting
     check_icd
     start icd
 
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
+# otp
+service otp /system/bin/otp_server
+    user system
+    group system
+    disabled
+
+on property:persist.security.tlc.otp=1
+    start otp
+    setprop persist.security.tlc.otp 0	
+
+
+# SecEDS
+service TvoutService_C /system/bin/bintvoutservice
     class main
     user system
-    group input
+    group graphics
+on property:ro.SecEDS.enable=false
+    stop TvoutService_C
 
-# for Bluetooth Tethering
-service dhcpcd_bt-pan /system/bin/dhcpcd -ABKL
-    class main
-    disabled
+#preparefbe
+service preparefbe_ce /system/bin/preparefbe storage_ce
     oneshot
-
-service iprenew_bt-pan /system/bin/dhcpcd -n
-    class late_start
     disabled
+service preparefbe_de /system/bin/preparefbe storage_de
     oneshot
-# end of BT
+    disabled
 
 service vpnclientd /system/bin/vpnclientd
-	socket vpnclientd seqpacket 0600 system system
-	user system
-	group system net_admin inet net_raw
-	disabled
+    socket vpnclientd seqpacket 0600 system system
+    user system
+    group system net_admin inet net_raw
+    disabled
 on property:service.vpnclientd.enable=1
-	start vpnclientd
+    start vpnclientd
 on property:service.vpnclientd.enable=0
-	stop vpnclientd
+    stop vpnclientd
 
-# Reactivation lock
-	service reactived /system/bin/reactived
-	class late_start
+on property:sys.sf.restart=1
+    restart surfaceflinger

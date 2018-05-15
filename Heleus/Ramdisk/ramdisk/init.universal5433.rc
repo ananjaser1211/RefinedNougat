@@ -9,6 +9,17 @@ on early-init
 on init
     mkdir /preload 0771 system system
 
+export LD_SHIM_LIBS "/system/lib/libexynoscamera.so|libcamera_shim.so:/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
+	
+    # See storage config details at http://source.android.com/tech/storage/
+    mkdir /mnt/media_rw/extSdCard 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveA 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveB 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveC 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveD 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveE 0700 media_rw media_rw
+    mkdir /mnt/media_rw/UsbDriveF 0700 media_rw media_rw
+
     # See storage config details at http://source.android.com/tech/storage/
     mkdir /mnt/shell/emulated 0700 shell shell
     mkdir /storage/emulated 0555 root root
@@ -18,13 +29,30 @@ on init
 
     export EXTERNAL_STORAGE /sdcard
 
-    #export SECONDARY_STORAGE /storage/extSdCard
+    # map "real" external storages paths also in same way. backwards compatibility.
+    symlink /storage/extSdCard /mnt/extSdCard
+    symlink /storage/UsbDriveA /mnt/UsbDriveA
+    symlink /storage/UsbDriveB /mnt/UsbDriveB
+    symlink /storage/UsbDriveC /mnt/UsbDriveC
+    symlink /storage/UsbDriveD /mnt/UsbDriveD
+    symlink /storage/UsbDriveE /mnt/UsbDriveE
+    symlink /storage/UsbDriveF /mnt/UsbDriveF
+
+    export SECONDARY_STORAGE /storage/extSdCard
+
+    mkdir /storage/extSdCard 0700 root root
+    mkdir /storage/UsbDriveA 0700 root root
+    mkdir /storage/UsbDriveB 0700 root root
+    mkdir /storage/UsbDriveC 0700 root root
+    mkdir /storage/UsbDriveD 0700 root root
+    mkdir /storage/UsbDriveE 0700 root root
+    mkdir /storage/UsbDriveF 0700 root root
 
     symlink /data/app /factory
-
+    symlink /dev/block/platform/15540000.dwmmc0/by-name/PERSISTENT /dev/block/persistent
 
     mkdir /efs 0771 radio system
-    symlink /dev/block/mmcblk0p13 /dev/mbin0
+    symlink /dev/block/platform/15540000.dwmmc0/by-name/RADIO /dev/mbin0
     restorecon /dev/mbin0
 
     # msockets for modem sockets with same permissions as /dev/sockets
@@ -59,12 +87,38 @@ on post-fs-data
     chown system radio /sys/class/camera/ois/oisfw
     chown system radio /sys/class/camera/ois/ois_diff
 
+    # Permissions for Camera to flush cache buffers
+    chown system system /sys/devices/virtual/sec/sec_misc/drop_caches
+
     #Private Mode
     mkdir /mnt/shell/privatemode 0700 system system
     mkdir /storage/Private 0000 system system
     mkdir /data/privatemode 0770 system system
     chown system system /data/privatemode
     restorecon /data/privatemode
+
+# SVC LED
+    chown system system /sys/class/sec/led/led_r
+    chown system system /sys/class/sec/led/led_g
+    chown system system /sys/class/sec/led/led_b
+
+    chown system system /sys/class/leds/led_r/brightness
+    chown system system /sys/class/leds/led_g/brightness
+    chown system system /sys/class/leds/led_b/brightness
+    chown system system /sys/class/leds/led_r/delay_on
+    chown system system /sys/class/leds/led_g/delay_on
+    chown system system /sys/class/leds/led_b/delay_on
+    chown system system /sys/class/leds/led_r/delay_off
+    chown system system /sys/class/leds/led_g/delay_off
+    chown system system /sys/class/leds/led_b/delay_off
+    chown system system /sys/class/leds/led_r/blink
+    chown system system /sys/class/leds/led_g/blink
+    chown system system /sys/class/leds/led_b/blink
+
+    chown system system /sys/class/sec/led/led_pattern
+    chown system system /sys/class/sec/led/led_blink
+    chown system system /sys/class/sec/led/led_br_lev
+    chown system system /sys/class/sec/led/led_lowpower
 
 # Audio
     mkdir /data/firmware 0770 media system
@@ -133,6 +187,10 @@ on boot
     chmod 0660 /efs/prov/ffffffff00000000000000000000000c.tlbin
 # CS socket
     mkdir /dev/socket/cs_socket 0770 system system
+
+# RTC logging daemon
+    chmod 0770 /system/bin/rtc_log.sh
+    chown system system /system/bin/rtc_log.sh
 
     # PMS DVFS
     chown radio system /sys/power/cpufreq_table
@@ -307,37 +365,29 @@ on boot
     # CPU Idle
     chown system radio /sys/module/cpuidle_exynos5433/parameters/enable_mask
 
-    # RTC logging daemon
-    chmod 0770 /system/bin/rtc_log.sh
-    chown system system /system/bin/rtc_log.sh
-
 # MIF
     write /sys/module/modem_modemctl_device_m74xx/parameters/cp_watchdog_enable 1
+
+    # WLAN
+    write /proc/sys/net/ipv4/tcp_adv_win_scale  2
 
 on fs
     mount_all /fstab.universal5433
     setprop ro.crypto.fuse_sdcard true
 
-    # For Absolute Persistence Partition
-    mkdir /persdata 0755 system system
-    mkdir /persdata/absolute 0750 system system
+# Permissions for ION
+    chmod 0660 /sys/class/ion_cma/ion_video_ext/isolated
+    chown system system /sys/class/ion_cma/ion_video_ext/isolated
 
-    wait /dev/block/mmcblk0p16
-    check_fs /dev/block/mmcblk0p16 ext4
-    mount ext4 /dev/block/mmcblk0p16 /persdata/absolute nosuid nodev barrier=1
+# Permissions for backlight
+    chmod 0660 /sys/class/backlight/pwm-backlight.0/brightness
+    chown system system /sys/class/backlight/pwm-backlight.0/brightness
 
-    chown system system /persdata
-    chmod 0755 /persdata
-    chown system system /persdata/absolute
-    chmod 0750 /persdata/absolute
+# Copy DRM Key
+    copy /system/app/wv.keys /factory/wv.keys
 
-# MTP permission
-    chmod 0660 /dev/usb_mtp_gadget
-    chown system mtp /dev/usb_mtp_gadget
-
-# terminal mode
-    chmod 0660 /sys/class/android_usb/android0/terminal_version
-    chown system system /sys/class/android_usb/android0/terminal_version
+# Permission for DRM Key
+    chmod 0644 /factory/wv.keys
 
 # for datarouter
     chown system system /dev/dun
@@ -345,10 +395,48 @@ on fs
     chown system system /dev/ttyGS1
     chown system system /dev/ttyGS2
     chown system system /dev/ttyGS3
+
+# ExyRng startup
+service exyrngd /system/bin/exyrngd -b
+    user root
+    group root
+    class main
+    oneshot
+
+# Support Preload install apks
+    wait /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev ro barrier=1
+    setprop storage.preload.complete 1
+
+    # For Absolute Persistence Partition
+    mkdir /persdata 0755 system system
+    mkdir /persdata/absolute 0750 system system
+
+    wait /dev/block/platform/15540000.dwmmc0/by-name/PERSDATA
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/PERSDATA /persdata/absolute nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
+
+    chown system system /persdata
+    chmod 0755 /persdata
+    chown system system /persdata/absolute
+    chmod 0750 /persdata/absolute
+
 # MIF
     chown radio radio /sys/devices/virtual/misc/multipdp/waketime
-    chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
-    chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state
+
+# for datarouter
+    chown system system /dev/dun
+    chown system system /dev/ttyGS0
+    chown system system /dev/ttyGS1
+    chown system system /dev/ttyGS2
+    chown system system /dev/ttyGS3
+
+# MTP device permission
+    chmod 0660 /dev/usb_mtp_gadget
+    chown system system /dev/usb_mtp_gadget
+
+# Terminal version permission
+    chown system system /sys/class/android_usb/android0/terminal_version
+    chmod 0660 /sys/class/android_usb/android0/terminal_version
 
 # Permissions for backlight
     chown system system /sys/class/backlight/panel/brightness
@@ -527,6 +615,18 @@ on fs
 # SHTC1 BULK
     chmod 0600 /dev/shtc1_sensor
     chown system system /dev/shtc1_sensor
+
+# Permissions for MDNIE
+    chown system media_rw /sys/class/mdnie/mdnie/mode
+    chown system media_rw /sys/class/mdnie/mdnie/scenario
+    chown system system /sys/class/mdnie/mdnie/accessibility
+    chown system system /sys/class/mdnie/mdnie/auto_brightness
+    chown system system /sys/class/mdnie/mdnie/sensorRGB
+    
+    
+# SHTC1 BULK
+    chmod 0600 /dev/shtc1_sensor
+    chown system system /dev/shtc1_sensor
 # SensorHub
     chown system radio /sys/class/sensors/ssp_sensor/enable
     chown system radio /sys/class/sensors/ssp_sensor/mcu_rev
@@ -551,13 +651,19 @@ on fs
     chown system radio /sys/class/sensors/ssp_sensor/ssp_flush
     chmod 0600 /dev/batch_io
     chown system system /dev/batch_io
+    
+# SensorHub (Location Hub)
+service lhd /system/bin/lhd /system/etc/lhd.conf
+    class main
+    user root
+    group system inet net_raw
+    ioprio be 0
+    disabled
 
-# Permissions for MDNIE
-    chown system media_rw /sys/class/mdnie/mdnie/mode
-    chown system media_rw /sys/class/mdnie/mdnie/scenario
-    chown system system /sys/class/mdnie/mdnie/accessibility
-    chown system system /sys/class/mdnie/mdnie/auto_brightness
-    chown system system /sys/class/mdnie/mdnie/sensorRGB
+service cameraserver /system/bin/cameraserver
+    class main
+    user cameraserver
+    group media_rw audio camera drmrpc inet shell sdcard_r system
 
 # Copy DRM Key
     copy /system/app/wv.keys /factory/wv.keys
@@ -567,6 +673,11 @@ on fs
 
     chown radio system /efs
     chmod 0771 /efs
+
+# permission for CHARGING
+    chown system radio /sys/class/power_supply/battery/batt_discharging_check
+    chown system radio /sys/class/power_supply/battery/batt_discharging_check_adc
+    chown system radio /sys/class/power_supply/battery/batt_self_discharging_control
 
 # IR_LED
     chown system radio /sys/class/sec/sec_ir/ir_send
@@ -645,6 +756,10 @@ service watchdogd /sbin/watchdogd 10 20
 on property:ro.debug_level=0x4f4c
     start watchdogd
 
+on property:sys.boot_completed=1
+    write /proc/sys/vm/dirty_bytes 31457280
+    write /proc/sys/vm/dirty_background_bytes 15728640
+
 service prepare_param /system/bin/prepare_param.sh /dev/block/platform/15540000.dwmmc0/by-name/PARAM
     class core
     user root
@@ -685,17 +800,14 @@ service ipsec-daemon /system/bin/IPSecService
 
 # LPM
 on property:ro.bootmode=charger
-    mount ext4 /dev/block/mmcblk0p18 /system wait ro
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM /system wait ro
+
+on property:ro.bootmode=charger
+    wait /dev/block/platform/15540000.dwmmc0/by-name/EFS
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
 
 on property:ro.bootmode=charger
     class_start sec-charger
-
-# SensorHub (Location Hub)
-service lhd /system/bin/lhd /system/etc/lhd.conf
-    class main
-    user gps
-    group system inet net_raw
-    ioprio be 0
 
 # GPS
 service gpsd /system/bin/gpsd -c /system/etc/gps.xml
@@ -742,6 +854,12 @@ on property:ro.securestorage.knox=true
     restorecon -R /dev/.secure_storage
     start secure_storage
 
+# for ethernet
+service dhcpcd_eth0 /system/bin/dhcpcd -ABKL
+    class main
+    disabled
+    oneshot
+
 # SSWAP
 service swapon /sbin/sswap -s -f 1536
     class core
@@ -750,18 +868,26 @@ service swapon /sbin/sswap -s -f 1536
     seclabel u:r:sswap:s0
     oneshot
 
-# Reactivation lock
-	service reactived /system/bin/reactived
-	class late_start
+# RTC logging daemon
+service rtc_log /system/bin/rtc_log.sh
+    class main
+    user system
+    group system
+    seclabel u:r:rtc_log:s0
+    oneshot
 
 # umount service
-service umount_service /system/bin/umount -D /preload
+service umount_service /system/bin/umount /preload
     disabled
     oneshot
 
 on property:persist.sys.storage_preload=1
-    mount ext4 /dev/block/mmcblk0p20 /preload nosuid nodev noatime wait ro
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev noatime wait ro
     setprop storage.preload.complete 1
 
 on property:persist.sys.storage_preload=0
     start umount_service
+
+# Reactivation lock
+service reactived /system/bin/reactived
+    class late_start

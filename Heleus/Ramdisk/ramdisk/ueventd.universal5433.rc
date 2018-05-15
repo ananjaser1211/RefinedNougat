@@ -99,12 +99,17 @@
 # audio
 /dev/seiren               0660   system     audio
 
+
 # sensor sysfs properties
 /sys/devices/virtual/input/input*	poll_delay	0660	system	radio
 /sys/devices/virtual/input/input*	enable		0660	system	radio
 
+# sensor
+/dev/iio:device*      0760  system   radio
+
 # sensorhub
 /dev/ssp_sensorhub		  0660	 system     system
+/dev/ssp_data_injection   0660   system     system
 
 # Sensorhub IIO
 /dev/ssp_sensorhub        0660   system		system
@@ -121,7 +126,10 @@
 /dev/umts*                0660   system     radio
 
 # DNT
-/dev/block/mmcblk0p15     0660   system     system
+/dev/block/platform/15540000.dwmmc0/by-name/DNT     0660   system     system
+
+# Google FRP solution
+/dev/block/platform/15540000.dwmmc0/by-name/PERSISTENT    0660    system    system
 
 # Broadcom Sensorhub Bridge Driver
 /dev/bbd_sensor           0660   system     system
@@ -131,4 +139,11 @@
 /dev/bbd_sio              0660   system     system
 /dev/bbd_patch            0660   system     system
 /dev/ttyBCM*              0660   system     system
+
+# MobiCore
+/dev/mobicore             0700   system     system
+/dev/mobicore-user        0666   radio     system
+
+# Secure MEM driver
+/dev/s5p-smem             0660   system     system
 
