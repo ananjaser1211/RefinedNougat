@@ -33,6 +33,10 @@ CR_VARIANT=N910C
 CR_ANDROID=7
 CR_ARCH=arm
 
+#Init
+export $CR_ARCH
+export CROSS_COMPILE=$CR_TC
+export ANDROID_MAJOR_VERSION=$CR_ANDROID
 echo "----------------------------------------------"
 echo "Cleaning"
 echo " "
@@ -43,10 +47,7 @@ echo " "
 echo "----------------------------------------------"
 echo "Building zImage for $CR_VARIANT"
 echo " "
-export $CR_ARCH
-export CROSS_COMPILE=$CR_TC
 export LOCALVERSION=-Heleus_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
-export ANDROID_MAJOR_VERSION=$CR_ANDROID
 make  $CR_CONFG
 make -j$CR_JOBS
 echo " "
