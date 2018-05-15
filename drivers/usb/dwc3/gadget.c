@@ -80,6 +80,27 @@ static void dwc3_gadget_cable_connect(struct dwc3 *dwc, bool connect)
 	}
 }
 #endif
+
+#ifdef CONFIG_ARGOS
+extern int argos_irq_affinity_setup_label(unsigned int irq, const char *label,
+                 struct cpumask *affinity_cpu_mask,
+                 struct cpumask *default_cpu_mask);
+#ifdef CONFIG_SCHED_HMP
+extern struct cpumask hmp_slow_cpu_mask;
+static inline struct cpumask *get_default_cpu_mask(void)
+{
+	return &hmp_slow_cpu_mask;
+}
+#else
+static inline struct cpumask *get_default_cpu_mask(void)
+{
+	return cpu_all_mask;
+}
+#endif
+cpumask_var_t affinity_cpu_mask;
+cpumask_var_t default_cpu_mask;
+#endif
+
 /**
  * dwc3_gadget_set_test_mode - Enables USB2 Test Modes
  * @dwc: pointer to our context structure
@@ -285,7 +306,9 @@ void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
 		} while(++i < req->request.num_mapped_sgs);
 		req->queued = false;
 	}
-	list_del(&req->list);
+	/* Only delete from the list if the item isn't poisoned. */
+	if (req->list.next != LIST_POISON1)
+		list_del(&req->list);
 	req->trb = NULL;
 
 	if (req->request.status == -EINPROGRESS)
@@ -1695,6 +1718,7 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *g, int is_active)
 			dwc3_gadget_run_stop(dwc, 1);
 		} else {
 #ifdef CONFIG_USB_ANDROID_SAMSUNG_COMPOSITE
+			dwc3_gadget_cable_connect(dwc,false);
 			dwc3_disconnect_gadget(dwc);
 			dwc->start_config_issued = false;
 			dwc->gadget.speed = USB_SPEED_UNKNOWN;
@@ -1848,6 +1872,17 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	rndis_notifier.notifier_call = rndis_notify_callback;
 	register_netdevice_notifier(&rndis_notifier);
 #endif
+#ifdef CONFIG_ARGOS
+		if (!zalloc_cpumask_var(&affinity_cpu_mask, GFP_KERNEL))
+			return -ENOMEM;
+		if (!zalloc_cpumask_var(&default_cpu_mask, GFP_KERNEL))
+			return -ENOMEM;
+	
+		cpumask_copy(default_cpu_mask, get_default_cpu_mask());
+		cpumask_or(affinity_cpu_mask, affinity_cpu_mask, cpumask_of(3));
+		argos_irq_affinity_setup_label(irq, "USB", affinity_cpu_mask, default_cpu_mask);
+#endif
+
 
 	return 0;
 

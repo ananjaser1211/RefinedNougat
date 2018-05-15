@@ -1817,7 +1817,9 @@ int sec_debug_subsys_init(void)
 	subsys_info->kernel.sched_log.timer_array_cnt = SCHED_LOG_MAX;
 #endif
 
+#ifdef CONFIG_ANDROID_LOGGER
 	sec_debug_subsys_set_logger_info(&subsys_info->kernel.logger_log);
+#endif
 	offset += sizeof(struct sec_debug_subsys);
 
 	subsys_info->kernel.cpu_info.cpu_active_mask_paddr = virt_to_phys(cpu_active_mask);

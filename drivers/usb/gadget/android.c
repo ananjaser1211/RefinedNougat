@@ -23,6 +23,10 @@
 #include <linux/utsname.h>
 #include <linux/platform_device.h>
 
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_USBTUNE
+#include <linux/usb/phy.h>
+#include <linux/usb/samsung_usb_phy.h>
+#endif
 #include <linux/usb/ch9.h>
 #include <linux/usb/composite.h>
 #include <linux/usb/gadget.h>
@@ -2224,6 +2228,41 @@ static ssize_t store_usb_device_lock_state(struct device *pdev,
 }
 #endif
 
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_USBTUNE
+extern u32 usbtune;
+
+static ssize_t
+usb_tune_show(struct device *pdev, struct device_attribute *attr, char *buf)
+{
+	struct usb_phy *phy = dev_get_drvdata(pdev);
+
+	phy = devm_usb_get_phy(pdev, USB_PHY_TYPE_USB3);
+	samsung_usb3phy_tune_read(phy);
+
+	return sprintf(buf, "%x\n", usbtune);
+}
+
+static ssize_t
+usb_tune_store(struct device *pdev, struct device_attribute *attr,
+					const char *buf, size_t size)
+{
+	struct usb_phy *phy = dev_get_drvdata(pdev);
+
+	u32 value;
+
+	sscanf(buf, "%x", &value);
+
+	usbtune = value & 0xffffffff;
+
+	phy = devm_usb_get_phy(pdev, USB_PHY_TYPE_USB3);
+	samsung_usb3phy_tune_write(phy);
+
+	return size;
+}
+static DEVICE_ATTR(usb_tune, S_IRUGO | S_IWUSR, usb_tune_show,
+					       usb_tune_store);
+#endif
+
 static DEVICE_ATTR(bcdUSB, S_IRUGO, bcdUSB_show, NULL);
 
 static DEVICE_ATTR(functions, S_IRUGO | S_IWUSR, functions_show,
@@ -2260,6 +2299,9 @@ static struct device_attribute *android_usb_attributes[] = {
 #endif
 #ifdef CONFIG_USB_LOCK_SUPPORT_FOR_MDM
 	&dev_attr_usb_lock,
+#endif
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_USBTUNE
+	&dev_attr_usb_tune,
 #endif
 	NULL
 };
@@ -2348,6 +2390,13 @@ static int android_usb_unbind(struct usb_composite_dev *cdev)
 	return 0;
 }
 
+static void android_gadget_complete(struct usb_ep *ep, struct usb_request *req)
+{
+	if (req->status || req->actual != req->length)
+		printk(KERN_DEBUG "usb: %s: %d, %d/%d\n", __func__,
+				req->status, req->actual, req->length);
+}
+
 /* HACK: android needs to override setup for accessory to work */
 static int (*composite_setup_func)(struct usb_gadget *gadget, const struct usb_ctrlrequest *c);
 
@@ -2365,6 +2414,8 @@ android_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *c)
 	req->length = 0;
 	gadget->ep0->driver_data = cdev;
 
+	req->complete = android_gadget_complete;
+	
 	list_for_each_entry(f, &dev->enabled_functions, enabled_list) {
 		if (f->ctrlrequest) {
 			value = f->ctrlrequest(f, cdev, c);
@@ -2426,7 +2477,6 @@ static void android_disconnect(struct usb_composite_dev *cdev)
 		printk(KERN_DEBUG"usb: %s mute_switch con(%d) sw(%d)\n",
 			 __func__, dev->connected, dev->sw_connected);
 	} else {
-		set_ncm_ready(false);
 		if (cdev->force_disconnect) {
 			dev->sw_connected = 1;
 			printk(KERN_DEBUG"usb: %s force_disconnect\n",

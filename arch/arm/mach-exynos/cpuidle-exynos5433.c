@@ -182,6 +182,7 @@ static struct check_reg_lpa exynos5_lpc_power_domain[] = {
 
 static struct check_reg_lpa exynos5_clock_gating[] = {
 	{.check_reg = EXYNOS5430_ENABLE_IP_PERIC0,	.check_bit = 0xF00FFF},
+	{.check_reg = EXYNOS5430_ENABLE_IP_PERIC2,	.check_bit = 0x3FF},
 };
 
 #ifdef CONFIG_EXYNOS_MIPI_LLI

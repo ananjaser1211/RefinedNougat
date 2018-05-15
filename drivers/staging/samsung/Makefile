@@ -15,6 +15,7 @@ obj-$(CONFIG_BATTERY_SAMSUNG)	+= sec_batt.o
 obj-$(CONFIG_SEC_DEBUG)		+= sec_debug.o sec_getlog.o sec_gaf.o
 obj-$(CONFIG_ARGOS)		+= sec_argos.o
 obj-$(CONFIG_SEC_LOG)		+= sec_log.o
+obj-$(CONFIG_SEC_LOG_PMSG)	+= sec_log_pmsg.o
 
 obj-$(CONFIG_SEC_MEM)		+= sec_memory.o
 # Samsung Reset Feature

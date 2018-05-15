@@ -376,6 +376,41 @@ static void samsung_usb3phy_tune(struct usb_phy *phy)
 	}
 }
 
+#ifdef CONFIG_USB_ANDROID_SAMSUNG_USBTUNE
+u32 usbtune;
+
+void samsung_usb3phy_tune_read(struct usb_phy *phy)
+{
+	struct samsung_usbphy *sphy;
+
+	sphy = phy_to_sphy(phy);
+
+	usbtune = readl(sphy->regs + EXYNOS5_DRD_PHYPARAM0);
+
+	printk("%s param0=0x%x(SQRXTUNE=0x%x, TXVREFTUNE=0x%x) \n",
+				__func__, usbtune, ((usbtune>>6) & 0x7), ((usbtune>>22) & 0xf));	
+
+}
+EXPORT_SYMBOL_GPL(samsung_usb3phy_tune_read);
+
+void samsung_usb3phy_tune_write(struct usb_phy *phy)
+{
+	struct samsung_usbphy *sphy;
+
+	sphy = phy_to_sphy(phy);
+
+	writel(usbtune, sphy->regs + EXYNOS5_DRD_PHYPARAM0);
+
+	usbtune = readl(sphy->regs + EXYNOS5_DRD_PHYPARAM0);
+
+	printk("%s param0=0x%x(SQRXTUNE=0x%x, TXVREFTUNE=0x%x)\n",
+				__func__, usbtune, ((usbtune>>6) & 0x7), ((usbtune>>22) & 0xf));
+
+}
+EXPORT_SYMBOL_GPL(samsung_usb3phy_tune_write);
+
+#endif
+
 static int samsung_usb3phy_init(struct usb_phy *phy)
 {
 	struct samsung_usbphy *sphy;

@@ -29,6 +29,8 @@
 #define SMC_CMD_L2X0DEBUG	(-25)
 
 #define SMC_MEM_PROT_SET        0x81000005
+#define SMC_DRM_SECMEM_REGION_INFO  0x8100000A
+#define SMC_DRM_SECMEM_REGION_PROT  0x8100000B
 
 /* Parameter for smc */
 #define SMC_PROTECTION_ENABLE   1
@@ -48,6 +50,9 @@
 
 /* For DTRNG Access */
 #define SMC_CMD_RANDOM		(0x81000030)
+
+#define EMMC0_FMP		(0x15541000)
+#define EMMC2_FMP		(0x15561000)
 
 /* MACRO for SMC_CMD_REG */
 #define SMC_REG_CLASS_CP15	(0x0 << 30)

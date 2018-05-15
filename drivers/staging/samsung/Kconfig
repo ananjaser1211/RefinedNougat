@@ -261,6 +261,13 @@ config SEC_LOG_LAST_KMSG
 	help
 	  This option enables /proc/last_kmsg support.
 
+config SEC_LOG_PMSG
+	default n
+	bool "Enable hooking pstore/pmsg" if EMBEDDED
+	depends on SEC_LOG && PSTORE_PMSG
+	help
+	  This option enables platform log support using pstore.
+
 config SEC_AVC_LOG
 	default n
 	bool "Enable avc audit log support" if EMBEDDED

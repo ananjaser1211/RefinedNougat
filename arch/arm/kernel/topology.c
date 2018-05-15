@@ -70,7 +70,7 @@ struct cpu_efficiency {
  * use the default SCHED_POWER_SCALE value for cpu_scale.
  */
 struct cpu_efficiency table_efficiency[] = {
-	{"arm,cortex-a15", 3891},
+	{"arm,cortex-a15", 3575},
 	{"arm,cortex-a7",  2048},
 	{NULL, },
 };

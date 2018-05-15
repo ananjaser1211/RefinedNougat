@@ -128,6 +128,12 @@ config SAMSUNG_USB3PHY
 	  Enable this to support Samsung USB 3.0 (Super Speed) phy controller
 	  for samsung SoCs.
 
+config USB_ANDROID_SAMSUNG_USBTUNE
+	tristate "Samsung USB 3.0 PHY Tune"
+	default n
+	help
+	  For USB PHY test as keystring. It needs adding deconfig and setting authority.
+
 config TWL4030_USB
 	tristate "TWL4030 USB Transceiver Driver"
 	depends on TWL4030_CORE && REGULATOR_TWL4030 && USB_MUSB_OMAP2PLUS

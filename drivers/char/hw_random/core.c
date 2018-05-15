@@ -369,6 +369,7 @@ static int hwrng_fillfn(void *unused)
 		mutex_unlock(&reading_mutex);
 		if (rc <= 0) {
 			pr_warn("hwrng: no data available\n");
+			try_to_freeze();
 			msleep_interruptible(10000);
 			continue;
 		}

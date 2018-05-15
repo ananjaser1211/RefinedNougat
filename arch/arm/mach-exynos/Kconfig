@@ -156,6 +156,7 @@ config SOC_EXYNOS5433
 	select EXYNOS_SPI_RESET_DURING_DSTOP if CPU_IDLE
 	select EXYNOS_PWM_RESET_DURING_DSTOP if CPU_IDLE
 	select CAL_SYS_PWRDOWN
+	select SECCOMP
 	help
 	  Enable EXYNOS5433 SoC support
 
@@ -227,6 +228,15 @@ config CAL_SYS_PWRDOWN
 config 24MHZ_XTALCLK_DRV_STRENGTH_X4
 	bool "24MHZ_XTALCLK_DRV_STRENGTH_X4"
   default n
+
+menu "Exynos5433 Type"
+	depends on SOC_EXYNOS5433
+
+config SOC_EXYNOS5433_L
+	bool "Exynos5433 L version"
+	help
+	  This option enable exynos5433 lite version
+endmenu
 
 config EXYNOS5430_BTS
 	bool "Bus traffic shaper support"
@@ -344,6 +354,14 @@ config EXYNOS_SNAPSHOT_REG
 config EXYNOS_SNAPSHOT_HOOK_LOGGER
 	bool "Enable hooking android platform log for ramdump"
 	depends on EXYNOS_SNAPSHOT
+	default y
+
+config EXYNOS_SNAPSHOT_PSTORE
+	bool "Enable supporting ramoops driver for pstore filesystem"
+	depends on EXYNOS_SNAPSHOT
+	select PSTORE
+	select PSTORE_RAM
+	select PSTORE_PMSG
 	default y
 
 config EXYNOS_SNAPSHOT_PANIC_REBOOT

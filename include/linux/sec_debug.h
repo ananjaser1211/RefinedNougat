@@ -410,4 +410,8 @@ extern void sec_debug_panic_handler_safe(struct pt_regs *regs);
 
 extern void read_lcd_register(void);
 
+#ifdef CONFIG_SEC_LOG_PMSG
+extern int sec_log_hook_pmsg(char *buffer, size_t count);
+#endif
+
 #endif				/* SEC_DEBUG_H */

@@ -65,7 +65,7 @@ static void of_get_usb_redriver_dt(struct device_node *np,
 		pdata->gpio_redriver_en = -1;
 
 	pdata->can_diable_usb =
-		of_property_read_bool(np, "samsung,can-disable-usb");
+		!(of_property_read_bool(np, "samsung,unsupport-disable-usb"));
 	pr_info("%s, can_diable_usb %d\n", __func__, pdata->can_diable_usb);
 	return;
 }
@@ -210,7 +210,6 @@ static int usb_handle_notification(struct notifier_block *nb,
 			pr_err("%s - ACTION Error!\n", __func__);
 		break;
 	case ATTACHED_DEV_OTG_MUIC:
-	case ATTACHED_DEV_USB_LANHUB_MUIC:
 		if (action == MUIC_NOTIFY_CMD_DETACH)
 			send_otg_notify(o_notify, NOTIFY_EVENT_HOST, 0);
 		else if (action == MUIC_NOTIFY_CMD_ATTACH)
@@ -260,6 +259,14 @@ static int usb_handle_notification(struct notifier_block *nb,
 			send_otg_notify(o_notify, NOTIFY_EVENT_MMDOCK, 0);
 		else if (action == MUIC_NOTIFY_CMD_ATTACH)
 			send_otg_notify(o_notify, NOTIFY_EVENT_MMDOCK, 1);
+		else
+			pr_err("%s - ACTION Error!\n", __func__);
+		break;
+	case ATTACHED_DEV_USB_LANHUB_MUIC:
+		if (action == MUIC_NOTIFY_CMD_DETACH)
+			send_otg_notify(o_notify, NOTIFY_EVENT_LANHUB, 0);
+		else if (action == MUIC_NOTIFY_CMD_ATTACH)
+			send_otg_notify(o_notify, NOTIFY_EVENT_LANHUB, 1);
 		else
 			pr_err("%s - ACTION Error!\n", __func__);
 		break;
@@ -393,6 +400,8 @@ static int exynos_set_host(bool enable)
 #if defined(CONFIG_USB_SUPER_HIGH_SPEED_SWITCH_CHANGE)
 extern u8 usb30en;
 #endif
+
+extern void set_ncm_ready(bool ready);
 static int exynos_set_peripheral(bool enable)
 {
 	struct otg_notify *o_notify;
@@ -406,6 +415,7 @@ static int exynos_set_peripheral(bool enable)
 		usb30en = 0;
 #endif
 		check_usb_vbus_state(pdata->g_ndev.gadget_state);
+        set_ncm_ready(false);
 	} else {
 		pdata->g_ndev.gadget_state = GADGET_NOTIFIER_ATTACH;
 		check_usb_vbus_state(pdata->g_ndev.gadget_state);
