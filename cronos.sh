@@ -38,10 +38,10 @@ export $CR_ARCH
 export CROSS_COMPILE=$CR_TC
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 echo "----------------------------------------------"
-echo "Cleaning"
+# echo "Cleaning"
 echo " "
-make clean
-make mrproper
+# make clean
+# make mrproper
 # rm -r -f $CR_OUT/*
 echo " "
 echo "----------------------------------------------"
