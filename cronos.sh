@@ -19,11 +19,11 @@ CR_VERSION=V0.1
 CR_DATE=$(date +%Y%m%d)
 CR_TC=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
 CR_DIR=$(pwd)
-CR_OUT=$CR_DIR/Heleus/out
+CR_OUT=$CR_DIR/Helios/out
 CR_DTS=arch/arm/boot/dts
 CR_JOBS=5
-CR_AIK=$CR_DIR/Heleus/AIK-Linux
-CR_RAMDISK=$CR_DIR/Heleus/Ramdisk
+CR_AIK=$CR_DIR/Helios/AIK-Linux
+CR_RAMDISK=$CR_DIR/Helios/Ramdisk
 CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
 # Device specific Variables
@@ -47,7 +47,7 @@ echo " "
 echo "----------------------------------------------"
 echo "Building zImage for $CR_VARIANT"
 echo " "
-export LOCALVERSION=-Heleus_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
+export LOCALVERSION=-Helios_Kernel-$CR_VERSION-$CR_VARIANT-$CR_DATE
 make  $CR_CONFG
 make -j$CR_JOBS
 echo " "
@@ -75,7 +75,7 @@ cp -rf $CR_RAMDISK/* $CR_AIK
 mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
 mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
 $CR_AIK/repackimg.sh
-mv $CR_AIK/image-new.img $CR_OUT/Heleus-$CR_VARIANT-$CR-VERSION-$CR_DATE.img
+mv $CR_AIK/image-new.img $CR_OUT/Helios-$CR_VARIANT-$CR-VERSION-$CR_DATE.img
 $CR_AIK/cleanup.sh
 echo "----------------------------------------------"
 echo "$CR_VARIANT Ready at $CR_OUT"
