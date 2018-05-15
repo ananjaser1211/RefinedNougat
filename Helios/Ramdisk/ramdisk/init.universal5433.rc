@@ -1,7 +1,9 @@
 import init.universal5433.usb.rc
 import init.wifi.rc
+import init.fac.rc
 import init.carrier.rc
 import init.baseband.rc
+import init.exynos7420_fac.rc
 
 on early-init
     mount debugfs /sys/kernel/debug /sys/kernel/debug
@@ -125,6 +127,15 @@ on post-fs-data
     chown media system /data/firmware
 
 on boot
+    # Ensure all CPUs are online (big cluster)
+    write /sys/devices/system/cpu/cpu4/online 1
+
+    # Update cpusets now that processors are up
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/foreground/boost/cpus 4-7
+    write /dev/cpuset/background/cpus 0
+    write /dev/cpuset/system-background/cpus 0-3
+
     # Reduce reserved lowmem from ~48MB to ~12MB
     write /proc/sys/vm/lowmem_reserve_ratio "128 128"
 
