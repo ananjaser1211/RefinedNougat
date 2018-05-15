@@ -75,7 +75,7 @@ cp -rf $CR_RAMDISK/* $CR_AIK
 mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
 mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
 $CR_AIK/repackimg.sh
-mv $CR_AIK/image-new.img $CR_OUT/Helios-$CR_VARIANT-$CR-VERSION-$CR_DATE.img
+mv $CR_AIK/image-new.img $CR_OUT/Helios-$CR_VARIANT-$CR_VERSION-$CR_DATE.img
 $CR_AIK/cleanup.sh
 echo "----------------------------------------------"
 echo "$CR_VARIANT Ready at $CR_OUT"
