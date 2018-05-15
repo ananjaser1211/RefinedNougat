@@ -659,7 +659,7 @@ void pm_wakeup_event(struct device *dev, unsigned int msec)
 }
 EXPORT_SYMBOL_GPL(pm_wakeup_event);
 
-static void print_active_wakeup_sources(void)
+void pm_print_active_wakeup_sources(void)
 {
 	struct wakeup_source *ws;
 	int active = 0;
@@ -683,6 +683,7 @@ static void print_active_wakeup_sources(void)
 			last_activity_ws->name);
 	rcu_read_unlock();
 }
+EXPORT_SYMBOL_GPL(pm_print_active_wakeup_sources);
 
 /**
  * pm_wakeup_pending - Check if power transition in progress should be aborted.
@@ -708,7 +709,7 @@ bool pm_wakeup_pending(void)
 	spin_unlock_irqrestore(&events_lock, flags);
 
 	if (ret)
-		print_active_wakeup_sources();
+		pm_print_active_wakeup_sources();
 
 	return ret;
 }
@@ -862,7 +863,6 @@ static int print_wakeup_source_stats(struct seq_file *m,
 static int wakeup_sources_stats_show(struct seq_file *m, void *unused)
 {
 	struct wakeup_source *ws;
-	unsigned int cnt, inpr;
 
 	seq_puts(m, "name\t\tactive_count\tevent_count\twakeup_count\t"
 		"expire_count\tactive_since\ttotal_time\tmax_time\t"
@@ -873,9 +873,6 @@ static int wakeup_sources_stats_show(struct seq_file *m, void *unused)
 		print_wakeup_source_stats(m, ws);
 	rcu_read_unlock();
 
-	split_counters(&cnt, &inpr);
-	seq_printf(m, "\nRegistered wakeup events: %u\n"
-			"Wakeup events in progress: %u\n", cnt, inpr);
 	return 0;
 }
 

@@ -126,6 +126,8 @@ int C_A_D = 1;
 struct pid *cad_pid;
 EXPORT_SYMBOL(cad_pid);
 
+int ignore_fs_panic = 0; // To prevent kernel panic by EIO during shutdown
+
 /*
  * If set, this is used for preparing the system to power off.
  */
@@ -380,6 +382,7 @@ void kernel_restart_prepare(char *cmd)
 	blocking_notifier_call_chain(&reboot_notifier_list, SYS_RESTART, cmd);
 	system_state = SYSTEM_RESTART;
 	usermodehelper_disable();
+	ignore_fs_panic = 1;
 	device_shutdown();
 }
 
@@ -465,6 +468,7 @@ static void kernel_shutdown_prepare(enum system_states state)
 		(state == SYSTEM_HALT)?SYS_HALT:SYS_POWER_OFF, NULL);
 	system_state = state;
 	usermodehelper_disable();
+	ignore_fs_panic = 1;
 	device_shutdown();
 }
 /**
@@ -2469,9 +2473,6 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 			else
 				return -EINVAL;
 			break;
-		case PR_SET_VMA:
-			error = prctl_set_vma(arg2, arg3, arg4, arg5);
-			break;
 		default:
 			return -EINVAL;
 		}
@@ -2508,6 +2509,9 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		if (arg2 || arg3 || arg4 || arg5)
 			return -EINVAL;
 		return task_no_new_privs(current) ? 1 : 0;
+	case PR_SET_VMA:
+		error = prctl_set_vma(arg2, arg3, arg4, arg5);
+		break;
 	default:
 		error = -EINVAL;
 		break;
