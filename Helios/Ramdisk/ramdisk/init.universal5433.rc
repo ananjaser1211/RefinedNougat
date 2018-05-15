@@ -772,31 +772,6 @@ on property:ro.debuggable=1
     write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
     write /sys/module/fiq_debugger/parameters/kgdb_enable 1
 
-# ITP mode enter/exit
-on property:ril.cbd.modechan=0
-    restart ril-daemon
-
-on property:ril.cbd.modechan=2
-    restart ril-daemon
-
-#STE mmd
-service mmd /system/bin/mmd
-    class main
-    user system
-    group system radio net_admin inet sdcard_rw sdcard_r media_rw
-
-#STE dip
-service dip /system/bin/debug_interface_proxy -c /data/dipconfs
-    class main
-    user system
-    group system radio net_admin inet sdcard_rw sdcard_r media_rw
-
-# IPSec for VOLTE
-service ipsec-daemon /system/bin/IPSecService
-    class main
-    socket ipsec_socket stream 660 system system
-    user system
-    group system net_raw inet net_admin
 
 # LPM
 on property:ro.bootmode=charger
