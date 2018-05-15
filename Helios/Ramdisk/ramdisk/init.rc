@@ -9,7 +9,6 @@ import /init.${ro.hardware}.rc
 import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
 import /init.container.rc
-import /init.rilcommon.rc
 import /init.fac.rc
 
 on early-init
@@ -367,7 +366,6 @@ on post-fs
     mount rootfs rootfs / shared rec
     # Mount default storage into root namespace
     mount none /mnt/runtime/default /storage slave bind rec
-
 ## Samsung ODE >>>
     mount tmpfs tmpfs /mnt/secure private rec
 ## Samsung ODE <<<
@@ -380,9 +378,9 @@ on post-fs
     # We chown/chmod /cache again so because mount is run as root + defaults
     chown system cache /cache
     chmod 0770 /cache
-
     # We restorecon /cache in case the cache partition has been reset.
     restorecon_recursive /cache
+
     # Create /cache/recovery in case it's not there. It'll also fix the odd
     # permissions if created by the recovery system.
     mkdir /cache/recovery 0770 system cache
@@ -854,27 +852,6 @@ on boot
     chmod 0664 /sys/power/cpufreq_min_limit
     chown radio system /sys/power/cpufreq_max_limit
     chmod 0664 /sys/power/cpufreq_max_limit
-
-    chown radio system /sys/devices/11400000.mali/dvfs_table
-    chown radio system /sys/devices/11400000.mali/dvfs_min_lock
-    chown radio system /sys/devices/11400000.mali/dvfs_max_lock
-    chmod 0664 /sys/devices/11400000.mali/dvfs_table
-    chmod 0664 /sys/devices/11400000.mali/dvfs_min_lock
-    chmod 0664 /sys/devices/11400000.mali/dvfs_max_lock
-
-    chown radio system /sys/class/devfreq/bus_mif.7/available_frequencies
-    chown radio system /sys/class/devfreq/bus_mif.7/min_freq
-    chown radio system /sys/class/devfreq/bus_mif.7/max_freq
-    chmod 0664 /sys/class/devfreq/bus_mif.7/available_frequencies
-    chmod 0664 /sys/class/devfreq/bus_mif.7/min_freq
-    chmod 0664 /sys/class/devfreq/bus_mif.7/max_freq
-
-    chown radio system /sys/class/devfreq/bus_int.6/available_frequencies
-    chown radio system /sys/class/devfreq/bus_int.6/min_freq
-    chown radio system /sys/class/devfreq/bus_int.6/max_freq
-    chmod 0664 /sys/class/devfreq/bus_int.6/available_frequencies
-    chmod 0664 /sys/class/devfreq/bus_int.6/min_freq
-    chmod 0664 /sys/class/devfreq/bus_int.6/max_freq
 
     # NFC_NXP
     setprop ro.nfc.port "I2C"

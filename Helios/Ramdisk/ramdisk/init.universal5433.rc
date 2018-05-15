@@ -78,7 +78,7 @@ on post-fs-data
     chown system radio /sys/class/camera/rear/isp_core
     chown system radio /sys/class/camera/rear/fw_update
     chown system radio /sys/class/camera/flash/rear_flash
-    chown media system /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
     chown system radio /sys/class/camera/front/front_camfw
     chown system radio /sys/class/camera/front/front_camtype
     chown system radio /sys/class/camera/ois/selftest
@@ -379,30 +379,6 @@ on fs
     chmod 0660 /sys/class/ion_cma/ion_video_ext/isolated
     chown system system /sys/class/ion_cma/ion_video_ext/isolated
 
-# Permissions for backlight
-    chmod 0660 /sys/class/backlight/pwm-backlight.0/brightness
-    chown system system /sys/class/backlight/pwm-backlight.0/brightness
-
-# Copy DRM Key
-    copy /system/app/wv.keys /factory/wv.keys
-
-# Permission for DRM Key
-    chmod 0644 /factory/wv.keys
-
-# for datarouter
-    chown system system /dev/dun
-    chown system system /dev/ttyGS0
-    chown system system /dev/ttyGS1
-    chown system system /dev/ttyGS2
-    chown system system /dev/ttyGS3
-
-# ExyRng startup
-service exyrngd /system/bin/exyrngd -b
-    user root
-    group root
-    class main
-    oneshot
-
 # Support Preload install apks
     wait /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN
     mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev ro barrier=1
@@ -518,6 +494,9 @@ service exyrngd /system/bin/exyrngd -b
     mkdir /dev/validity 0770 system system
 # Fingerprint_sensor
     chown system radio /sys/class/fingerprint/fingerprint/type_check
+    chown system radio /sys/class/fingerprint/fingerprint/name
+    chown system radio /sys/class/fingerprint/fingerprint/vendor
+
 # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
@@ -793,6 +772,12 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
 
 # SENSOR FRAMEWORK : starts fingerprintService
 service vcsFPService /system/bin/vcsFPService
+    class late_start
+    user system
+    group system
+
+# FINGERPRINT FRAMEWORK : starts fingerprintd
+service fingerprintd /system/bin/fingerprintd
     class late_start
     user system
     group system
