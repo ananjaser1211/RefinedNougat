@@ -6933,6 +6933,7 @@ fs/ufs/ufs.mod.c
 fs/ufs/ufs.mod.o
 fs/ufs/ufs.o
 fs/ufs/util.o
+Helios/out/*
 # MM
 drivers/misc/dualwave/dualwave.mod.c
 Heleus/out/
