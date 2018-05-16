@@ -148,4 +148,3 @@
 
 # Secure MEM driver
 /dev/s5p-smem             0660   system     system
-
