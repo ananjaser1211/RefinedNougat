@@ -1149,7 +1149,7 @@
 		i2c_ch = <0x2>;
 		i2c_addr = <0x6A>;
 		sensor_name = "6d1";
-		sensor_id = <16>;
+		sensor_id = <21>;
 		is_bns = <0>;
 		status = "okay";
 	};

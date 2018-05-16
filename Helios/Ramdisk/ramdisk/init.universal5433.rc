@@ -11,7 +11,7 @@ on early-init
 on init
     mkdir /preload 0771 system system
 
-export LD_SHIM_LIBS "/system/lib/libexynoscamera.so|libcamera_shim.so:/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
+export LD_SHIM_LIBS "/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
 	
     # See storage config details at http://source.android.com/tech/storage/
     mkdir /mnt/media_rw/extSdCard 0700 media_rw media_rw
@@ -68,7 +68,7 @@ on post-fs-data
     setprop vold.post_fs_data_done 1
 
     # Permissions Camera
-    mkdir /data/camera 0770 media system
+    mkdir /data/camera 0770 cameraserver system
     chown system radio /sys/class/camera/rear/rear_camfw
     chown system radio /sys/class/camera/rear/rear_camfw_full
     chown system radio /sys/class/camera/rear/rear_checkfw_user

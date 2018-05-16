@@ -39,7 +39,7 @@
 
 # gscalers
 /dev/video23              0660   media      graphics
-/dev/video26              0660   media      graphics
+/dev/video26              0660   media      drmrpc
 /dev/video24              0660   media      graphics
 /dev/video27              0660   media      graphics
 /dev/video29              0660   media      graphics
@@ -50,8 +50,8 @@
 # mscalers
 /dev/video50              0666   media      graphics
 /dev/video51              0666   media      graphics
-/dev/m2m1shot_scaler0     0660   cameraserver     graphics
-/dev/m2m1shot_scaler1     0660   cameraserver     graphics
+/dev/m2m1shot_scaler0     0660   cameraserver     m2mscaler
+/dev/m2m1shot_scaler1     0660   cameraserver       m2mscaler
 
 /dev/video55              0666   system     graphics
 /dev/fimg2d               0666   system     graphics
@@ -68,24 +68,35 @@
 /dev/video9               0660   media      mediadrm
 
 # camera
-/dev/video100             0660   media      media
-/dev/video101             0660   media      media
-/dev/video102             0660   media      media
-/dev/video103             0660   media      media
-/dev/video109             0666   media      media
-/dev/video110             0660   media      media
-/dev/video111             0660   media      media
-/dev/video112             0660   media      media
-/dev/video114             0660   media      media
-/dev/video115             0660   media      media
-/dev/video116             0660   media      media
-/dev/video130             0660   media      media
-/dev/video134             0660   media      media
-/dev/video137             0660   media      media
-/dev/video140             0660   media      media
-/dev/video141             0660   media      media
-/dev/video146             0660   media      media
-/dev/video149             0660   media      media
+/dev/video100             0660   cameraserver      cameraserver
+/dev/video101             0660   cameraserver      cameraserver
+/dev/video102             0660   cameraserver      cameraserver
+/dev/video103             0660   cameraserver      cameraserver
+/dev/video104             0660   cameraserver      cameraserver
+/dev/video109             0660   cameraserver      cameraserver
+/dev/video110             0660   cameraserver      cameraserver
+/dev/video111             0660   cameraserver      cameraserver
+/dev/video112             0660   cameraserver      cameraserver
+/dev/video114             0660   cameraserver      cameraserver
+/dev/video115             0660   cameraserver      cameraserver
+/dev/video116             0660   cameraserver      cameraserver
+/dev/video120             0660   cameraserver      cameraserver
+/dev/video121             0660   cameraserver      cameraserver
+/dev/video122             0660   cameraserver      cameraserver
+/dev/video130             0660   cameraserver      cameraserver
+/dev/video131             0660   cameraserver      cameraserver
+/dev/video132             0660   cameraserver      cameraserver
+/dev/video134             0660   cameraserver      cameraserver
+/dev/video137             0660   cameraserver      cameraserver
+/dev/video140             0660   cameraserver      cameraserver
+/dev/video141             0660   cameraserver      cameraserver
+/dev/video142             0660   cameraserver      cameraserver
+/dev/video146             0660   cameraserver      cameraserver
+/dev/video149             0660   cameraserver      cameraserver
+/dev/video150             0660   cameraserver      cameraserver
+/dev/video151             0660   cameraserver      cameraserver
+/dev/video152             0660   cameraserver      cameraserver
+/dev/video160             0660   cameraserver      cameraserver
 /dev/media2               0660   media      media
 
 # fingerprint sensor
