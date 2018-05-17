@@ -71,6 +71,8 @@
 #include <linux/security.h>
 #include <linux/spinlock.h>
 
+#include <linux/sched/prio.h>
+
 #ifdef CONFIG_ANDROID_BINDER_IPC_32BIT
 #define BINDER_IPC_32BIT 1
 #endif
