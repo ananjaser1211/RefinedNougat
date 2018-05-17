@@ -143,6 +143,10 @@ static struct notifier_block exynos_cpufreq_nb = {
 	.notifier_call = exynos5_tmu_cpufreq_notifier,
 };
 
+#if defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
+struct exynos_tmu_data *gpu_thermal_data_ptr = NULL;
+#endif
+
 /* For ePOP protection, handle additional thermal condition from MIF notification.*/
 #if defined(CONFIG_ARM_EXYNOS5430_BUS_DEVFREQ) || defined(CONFIG_ARM_EXYNOS5433_BUS_DEVFREQ)
 #define MIF_THERMAL_THRESHOLD				4		/* MR4 state 4: 85~ degree */
