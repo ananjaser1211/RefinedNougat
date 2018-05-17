@@ -403,6 +403,8 @@ static int msgctl_down(struct ipc_namespace *ns, int msqid, int cmd,
 	struct msg_queue *msq;
 	int err;
 
+	msqid64.msg_qbytes = 0;
+	
 	if (cmd == IPC_SET) {
 		if (copy_msqid_from_user(&msqid64, buf, version))
 			return -EFAULT;
