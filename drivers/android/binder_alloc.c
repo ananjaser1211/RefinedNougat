@@ -29,6 +29,7 @@
 #include <linux/sched.h>
 #include "binder_alloc.h"
 #include "binder_trace.h"
+#include <linux/err.h>
 
 #define BINDER_MIN_ALLOC (1 * PAGE_SIZE)
 
