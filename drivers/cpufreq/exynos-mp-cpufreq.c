@@ -26,7 +26,6 @@
 #include <linux/reboot.h>
 #include <linux/delay.h>
 #include <linux/cpu.h>
-#include <linux/ipa.h>
 #include <linux/pm_qos.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
@@ -35,7 +34,6 @@
 #include <linux/muic/muic.h>
 #include <linux/muic/muic_notifier.h>
 #endif
-#include <linux/sysfs_helpers.h>
 
 #include <asm/smp_plat.h>
 #include <asm/cputype.h>
@@ -48,27 +46,11 @@
 
 #ifdef CONFIG_SOC_EXYNOS5422_REV_0
 #define POWER_COEFF_15P		57 /* percore param */
-#define POWER_COEFF_7P		11 /* percore param */
-#endif
-
-#ifdef CONFIG_SOC_EXYNOS5430
+#define POWER_COEFF_7P		11 /* percore  param */
+#else
 #define POWER_COEFF_15P		48 /* percore param */
-#define POWER_COEFF_7P		9  /* percore param */
+#define POWER_COEFF_7P		9 /* percore  param */
 #endif
-
-#ifdef CONFIG_SOC_EXYNOS5433
-#define POWER_COEFF_15P		55 /* percore param */
-#define POWER_COEFF_7P		13 /* percore param */
-#endif
-
-static unsigned int KFC_MIN_FREQ = 200000;
-static unsigned int KFC_MAX_FREQ = 1400000;
-static unsigned int CPU_MIN_FREQ = 200000;
-static unsigned int CPU_MAX_FREQ = 2300000;
-module_param_named(kfc_min_freq, KFC_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
-module_param_named(kfc_max_freq, KFC_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
-module_param_named(cpu_min_freq, CPU_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
-module_param_named(cpu_max_freq, CPU_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
 
 #define VOLT_RANGE_STEP		25000
 
@@ -1139,7 +1121,6 @@ static struct notifier_block exynos_tmu_nb = {
 static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 {
 	unsigned int cur = get_cur_cluster(policy->cpu);
-	int ret;
 
 	pr_debug("%s: cpu[%d]\n", __func__, policy->cpu);
 
@@ -1158,14 +1139,7 @@ static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		cpumask_copy(policy->related_cpus, &cluster_cpus[CA7]);
 	}
 
-	ret = cpufreq_frequency_table_cpuinfo(policy, exynos_info[cur]->freq_table);
-	
-	if (!ret) {
-		policy->min = cur == CA15 ? CPU_MIN_FREQ : KFC_MIN_FREQ;
-		policy->max = cur == CA15 ? CPU_MAX_FREQ : KFC_MAX_FREQ;
-	}
-
-	return ret;
+	return cpufreq_frequency_table_cpuinfo(policy, exynos_info[cur]->freq_table);
 }
 
 static struct cpufreq_driver exynos_driver = {
@@ -1376,102 +1350,6 @@ static ssize_t store_cpufreq_max_limit(struct kobject *kobj, struct attribute *a
 }
 #endif
 
-static size_t get_freq_table_size(struct cpufreq_frequency_table *freq_table)
-{
-	size_t tbl_sz = 0;
-	int i;
-
-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++)
-		tbl_sz++;
-
-	return tbl_sz;
-}
-
-#ifdef CONFIG_SOC_EXYNOS5433
-#define KFC_MAX_VOLT 1375000
-#define EGL_MAX_VOLT 1375000
-#else
-#warning "Please define core maximum voltages for current SoC."
-#define KFC_MAX_VOLT 1300000
-#define EGL_MAX_VOLT 1375000
-#endif
-
-static ssize_t show_volt_table(struct kobject *kobj,
-				struct attribute *attr, char *buf, int cluster)
-{
-	int i, count = 0;
-	size_t tbl_sz = 0, pr_len;
-	struct cpufreq_frequency_table *freq_table = exynos_info[cluster]->freq_table;
-
-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++)
-		tbl_sz++;
-
-	if (tbl_sz == 0)
-		return -EINVAL;
-
-	pr_len = (size_t)((PAGE_SIZE - 2) / tbl_sz);
-
-	for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
-		if (freq_table[i].frequency != CPUFREQ_ENTRY_INVALID)
-			count += snprintf(&buf[count], pr_len, "%d %d\n",
-					freq_table[i].frequency,
-					exynos_info[cluster]->volt_table[i]);
-	}
-
-	return count;
-}
-
-static ssize_t store_volt_table(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count, int cluster)
-{
-	int i, tokens, rest, target, invalid_offset;
-	struct cpufreq_frequency_table *freq_table = exynos_info[cluster]->freq_table;
-	size_t tbl_sz = get_freq_table_size(freq_table);
-	int t[tbl_sz];
-
-	invalid_offset = 0;
-
-	if ((tokens = read_into((int*)&t, tbl_sz, buf, count)) < 0)
-		return -EINVAL;
-
-	target = -1;
-	if (tokens == 2) {
-		for (i = 0; (freq_table[i].frequency != CPUFREQ_TABLE_END); i++) {
-			unsigned int freq = freq_table[i].frequency;
-			if (freq == CPUFREQ_ENTRY_INVALID)
-				continue;
-
-			if (t[0] == freq) {
-				target = i;
-				break;
-			}
-		}
-	}
-
-	mutex_lock(&cpufreq_lock);
-
-	if (tokens == 2 && target > 0) {
-		if ((rest = t[1] % 6250) != 0) t[1] += 6250-rest;
-		sanitize_min_max(t[1], 600000, (cluster == CA7 ? KFC_MAX_VOLT : EGL_MAX_VOLT));
-		exynos_info[cluster]->volt_table[target] = t[1];
-	} else {
-		for (i = 0; i < tokens; i++) {
-			while (freq_table[i + invalid_offset].frequency == CPUFREQ_ENTRY_INVALID)
-				++invalid_offset;
-
-			if ((rest = t[i] % 6250) != 0) t[i] += 6250-rest;
-			sanitize_min_max(t[i], 600000, (cluster == CA7 ? KFC_MAX_VOLT : EGL_MAX_VOLT));
-			exynos_info[cluster]->volt_table[i + invalid_offset] = t[i];
-		}
-	}
-
-	ipa_update();
-
-	mutex_unlock(&cpufreq_lock);
-
-	return count;
-}
-
 static ssize_t show_cpu_freq_table(struct kobject *kobj,
 				struct attribute *attr, char *buf)
 {
@@ -1495,19 +1373,6 @@ static ssize_t show_cpu_freq_table(struct kobject *kobj,
 
 	count += snprintf(&buf[count], 2, "\n");
 	return count;
-}
-
-
-static ssize_t show_cpu_volt_table(struct kobject *kobj,
-				struct attribute *attr, char *buf)
-{
-	return show_volt_table(kobj, attr, buf, CA15);
-}
-
-static ssize_t store_cpu_volt_table(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count)
-{
-	return store_volt_table(kobj, attr, buf, count, CA15);
 }
 
 static ssize_t show_cpu_min_freq(struct kobject *kobj,
@@ -1543,7 +1408,7 @@ static ssize_t store_cpu_min_freq(struct kobject *kobj, struct attribute *attr,
 	if (input > 0)
 		input = min(input, (int)freq_max[CA15]);
 
-	if (pm_qos_request_active(&min_cpu_qos))
+	if (pm_qos_request_active(&min_cpu_qos_real))
 		pm_qos_update_request(&min_cpu_qos_real, input);
 
 	return count;
@@ -1560,7 +1425,7 @@ static ssize_t store_cpu_max_freq(struct kobject *kobj, struct attribute *attr,
 	if (input > 0)
 		input = max(input, (int)freq_min[CA15]);
 
-	if (pm_qos_request_active(&max_cpu_qos))
+	if (pm_qos_request_active(&max_cpu_qos_real))
 		pm_qos_update_request(&max_cpu_qos_real, input);
 
 	return count;
@@ -1589,18 +1454,6 @@ static ssize_t show_kfc_freq_table(struct kobject *kobj,
 
         count += snprintf(&buf[count], 2, "\n");
         return count;
-}
-
-static ssize_t show_kfc_volt_table(struct kobject *kobj,
-			     struct attribute *attr, char *buf)
-{
-	return show_volt_table(kobj, attr, buf, CA7);
-}
-
-static ssize_t store_kfc_volt_table(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count)
-{
-	return store_volt_table(kobj, attr, buf, count, CA7);
 }
 
 static ssize_t show_kfc_min_freq(struct kobject *kobj,
@@ -1636,7 +1489,7 @@ static ssize_t store_kfc_min_freq(struct kobject *kobj, struct attribute *attr,
 	if (input > 0)
 		input = min(input, (int)freq_max[CA7]);
 
-	if (pm_qos_request_active(&min_kfc_qos))
+	if (pm_qos_request_active(&min_kfc_qos_real))
 		pm_qos_update_request(&min_kfc_qos_real, input);
 
 	return count;
@@ -1653,28 +1506,24 @@ static ssize_t store_kfc_max_freq(struct kobject *kobj, struct attribute *attr,
 	if (input > 0)
 		input = max(input, (int)freq_min[CA7]);
 
-	if (pm_qos_request_active(&max_kfc_qos))
+	if (pm_qos_request_active(&max_kfc_qos_real))
 		pm_qos_update_request(&max_kfc_qos_real, input);
 
 	return count;
 }
 
 define_one_global_ro(cpu_freq_table);
-define_one_global_rw(cpu_volt_table);
 define_one_global_rw(cpu_min_freq);
 define_one_global_rw(cpu_max_freq);
 define_one_global_ro(kfc_freq_table);
-define_one_global_rw(kfc_volt_table);
 define_one_global_rw(kfc_min_freq);
 define_one_global_rw(kfc_max_freq);
 
 static struct attribute *mp_attributes[] = {
 	&cpu_freq_table.attr,
-	&cpu_volt_table.attr,
 	&cpu_min_freq.attr,
 	&cpu_max_freq.attr,
 	&kfc_freq_table.attr,
-	&kfc_volt_table.attr,
 	&kfc_min_freq.attr,
 	&kfc_max_freq.attr,
 	NULL
@@ -2379,7 +2228,7 @@ err_alloc_info_CA7:
 	return ret;
 }
 
-#if defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE) || defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CAFACTIVE)
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 device_initcall(exynos_cpufreq_init);
 #else
 late_initcall(exynos_cpufreq_init);
