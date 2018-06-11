@@ -624,7 +624,7 @@ CONFIG_AUTO_ZRELADDR=y
 #
 # CPU Power Management
 #
-
+CONFIG_POWERSUSPEND=y
 #
 # CPU Frequency scaling
 #
