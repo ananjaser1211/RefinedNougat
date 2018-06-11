@@ -1106,7 +1106,7 @@ static int __cpufreq_remove_dev(struct device *dev, struct subsys_interface *sif
 			__cpufreq_governor(data, CPUFREQ_GOV_POLICY_EXIT);
 
 		lock_policy_rwsem_read(cpu);
-        last_min = data->min;
+		last_min = data->min;
 		last_max = data->max;
 		kobj = &data->kobj;
 		cmp = &data->kobj_unregister;
