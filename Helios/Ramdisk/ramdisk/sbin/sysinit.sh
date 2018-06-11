@@ -12,7 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Originally Coded by Tkkg1994 @GrifoDev, enhanced by BlackMesa @XDAdevelopers
+#
 
+LOGFILE=/data/Helios/initd.log
+
+log_print() {
+  echo "$1"
+  echo "$1" >> $LOGFILE
+}
+
+log_print "------------------------------------------------------"
+log_print "**Helios initd script started at $( date +"%d-%m-%Y %H:%M:%S" )**"
 mount -o remount,rw /;
 mount -o rw,remount /system
 
@@ -23,7 +34,10 @@ if [ ! -e /system/etc/init.d ]; then
 	chmod -R 755 /system/etc/init.d
 fi
 
-# start init.d
+# Start init.d
 for FILE in /system/etc/init.d/*; do
 	sh $FILE >/dev/null
 done;
+   log_print "**Helios initd script finished at $( date +"%d-%m-%Y %H:%M:%S" )**"
+   log_print "------------------------------------------------------"
+
