@@ -6935,3 +6935,7 @@ fs/ufs/ufs.o
 fs/ufs/util.o
 Helios/out/
 Helios/N910C_Kernel/refined/n910c/*.img
+drivers/base/power/.boeffla_wl_blocker.o.cmd
+drivers/base/power/boeffla_wl_blocker.o
+kernel/power/.powersuspend.o.cmd
+kernel/power/powersuspend.o
