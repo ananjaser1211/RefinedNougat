@@ -39,7 +39,7 @@
 
 # gscalers
 /dev/video23              0660   media      graphics
-/dev/video26              0660   media      graphics
+/dev/video26              0660   media      drmrpc
 /dev/video24              0660   media      graphics
 /dev/video27              0660   media      graphics
 /dev/video29              0660   media      graphics
@@ -48,10 +48,10 @@
 /dev/video31              0660   media      graphics
 
 # mscalers
-/dev/video50              0666   media      graphics
-/dev/video51              0666   media      graphics
-/dev/m2m1shot_scaler0     0660   cameraserver     graphics
-/dev/m2m1shot_scaler1     0660   cameraserver     graphics
+/dev/video50              0660   media      graphics
+/dev/video51              0660   media      graphics
+/dev/m2m1shot_scaler0     0660   cameraserver     m2mscaler
+/dev/m2m1shot_scaler1     0660   cameraserver       m2mscaler
 
 /dev/video55              0666   system     graphics
 /dev/fimg2d               0666   system     graphics
@@ -67,11 +67,12 @@
 /dev/video8               0660   media      mediadrm
 /dev/video9               0660   media      mediadrm
 
+# camera
 /dev/video100             0660   media      media
 /dev/video101             0660   media      media
 /dev/video102             0660   media      media
 /dev/video103             0660   media      media
-/dev/video109             0666   media      media
+/dev/video109             0660   media      media
 /dev/video110             0660   media      media
 /dev/video111             0660   media      media
 /dev/video112             0660   media      media
@@ -85,6 +86,10 @@
 /dev/video141             0660   media      media
 /dev/video146             0660   media      media
 /dev/video149             0660   media      media
+/dev/media2               0660   media      media
+
+# fingerprint sensor
+/dev/vfsspi        0660   system     system
 
 # hevc
 /dev/video10              0660   media      mediadrm
@@ -123,7 +128,10 @@
 /dev/umts*                0660   system     radio
 
 # DNT
-/dev/block/mmcblk0p15     0660   system     system
+/dev/block/platform/15540000.dwmmc0/by-name/DNT     0660   system     system
+
+# Google FRP solution
+/dev/block/platform/15540000.dwmmc0/by-name/PERSISTENT    0660    system    system
 
 # Broadcom Sensorhub Bridge Driver
 /dev/bbd_sensor           0660   system     system
@@ -140,4 +148,3 @@
 
 # Secure MEM driver
 /dev/s5p-smem             0660   system     system
-

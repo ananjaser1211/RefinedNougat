@@ -252,6 +252,11 @@ on init
     chmod 0664 /dev/cpuset/background/tasks
     chmod 0664 /dev/cpuset/tasks
 
+    # change own for camera preview lagging
+    chown system system /sys/kernel/hmp/down_threshold
+
+    # set permission to 0660 for camera preview lagging
+    chmod 0660 /sys/kernel/hmp/down_threshold 
 
     # qtaguid will limit access to specific data based on group memberships.
     #   net_bw_acct grants impersonation of socket owners.
@@ -358,7 +363,7 @@ on post-fs
     start logd
 
     # mobicore
-    setprop sys.mobicoredaemon.enable stopped
+    # setprop sys.mobicoredaemon.enable stopped
 
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -468,10 +473,10 @@ on post-fs-data
     start debuggerd64
 
     # mobicore
-    export MC_AUTH_TOKEN_PATH /efs
-    mkdir /efs/TEE  0770 radio system
-	  chmod 0660 /dev/t-base-tui
-    chown system system /dev/t-base-tui
+    # export MC_AUTH_TOKEN_PATH /efs
+    # mkdir /efs/TEE  0770 radio system
+	# chmod 0660 /dev/t-base-tui
+    # chown system system /dev/t-base-tui
     start mobicore
 
     # Make sure we have the device encryption key.
@@ -881,11 +886,14 @@ on boot
     chmod 0770 /sys/class/mstldo/mst_drv/transmit
 
     # mobicore
+    mkdir /data/app/mcRegistry 0775 system system
+    mkdir /system/app/mcRegistry/TbStorage 0775 system system
+    chmod 0700 /dev/mobicore
+    chmod 0666 /dev/mobicore-user
     chmod 0660 /dev/s5p-smem
+    chown system system /dev/mobicore
+    chown radio system /dev/mobicore-user
     chown system system /dev/s5p-smem
-    chmod 0660 /dev/t-base-tui
-    chown system system /dev/t-base-tui
-    export MC_AUTH_TOKEN_PATH /efs
 
     # Assume SMP uses shared cpufreq policy for all CPUs
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
@@ -1226,7 +1234,7 @@ on boot
 on nonencrypted
     # mobicore
     mkdir /data/misc/mcRegistry 0775 system system
-    # A/B update verifier that marks a successful boot.
+    A/B update verifier that marks a successful boot.
     exec - root -- /system/bin/update_verifier nonencrypted
     class_start main
     class_start late_start
@@ -1280,11 +1288,11 @@ on property:vold.decrypt=trigger_restart_framework
     pdp restore
     pdp backup
     # mobicore
-    mkdir /data/misc/mcRegistry 0775 system system
+    # mkdir /data/misc/mcRegistry 0775 system system
     # A/B update verifier that marks a successful boot.
-    exec - root -- /system/bin/update_verifier trigger_restart_framework
-    class_start main
-    class_start late_start
+    # exec - root -- /system/bin/update_verifier trigger_restart_framework
+    # class_start main
+    # class_start late_start
 
 on property:vold.decrypt=trigger_shutdown_framework
     class_reset late_start
@@ -1462,7 +1470,7 @@ service scs /system/bin/scs
 # MobiCore startup
 service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
     class main
-    user system
+    user root
     group system
     oneshot
     

@@ -9,8 +9,9 @@ on early-init
     mount debugfs /sys/kernel/debug /sys/kernel/debug
 
 on init
+    mkdir /preload 0771 system system
 
-	export LD_SHIM_LIBS "/system/lib/libexynoscamera.so|libcamera_shim.so:/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
+export LD_SHIM_LIBS "/system/lib/libexynoscamera.so|libcamera_shim.so:/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
 	
     # See storage config details at http://source.android.com/tech/storage/
     mkdir /mnt/media_rw/extSdCard 0700 media_rw media_rw
@@ -66,25 +67,20 @@ on post-fs-data
 
     setprop vold.post_fs_data_done 1
 
-# Permissions Camera
-    mkdir /data/camera 0770 media system
+    # Permissions Camera
     chown system radio /sys/class/camera/rear/rear_camfw
     chown system radio /sys/class/camera/rear/rear_camfw_full
     chown system radio /sys/class/camera/rear/rear_checkfw_user
     chown system radio /sys/class/camera/rear/rear_checkfw_factory
-    chown system radio /sys/class/camera/rear/rear_sensor_standby
     chown system radio /sys/class/camera/rear/rear_camtype
     chown system radio /sys/class/camera/rear/rear_companionfw
     chown system radio /sys/class/camera/rear/rear_companionfw_full
     chown system radio /sys/class/camera/rear/rear_calcheck
     chown system radio /sys/class/camera/rear/isp_core
     chown system radio /sys/class/camera/rear/fw_update
-    chown system radio /sys/class/camera/rear/from_write
     chown system radio /sys/class/camera/flash/rear_flash
-    chown media system /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
     chown system radio /sys/class/camera/front/front_camfw
-    chown system radio /sys/class/camera/front/front_camfw_full
-    chown system radio /sys/class/camera/front/front_checkfw_factory
     chown system radio /sys/class/camera/front/front_camtype
     chown system radio /sys/class/camera/ois/selftest
     chown system radio /sys/class/camera/ois/ois_power
@@ -92,12 +88,38 @@ on post-fs-data
     chown system radio /sys/class/camera/ois/oisfw
     chown system radio /sys/class/camera/ois/ois_diff
 
+    # Permissions for Camera to flush cache buffers
+    chown system system /sys/devices/virtual/sec/sec_misc/drop_caches
+
     #Private Mode
     mkdir /mnt/shell/privatemode 0700 system system
     mkdir /storage/Private 0000 system system
     mkdir /data/privatemode 0770 system system
     chown system system /data/privatemode
     restorecon /data/privatemode
+
+# SVC LED
+    chown system system /sys/class/sec/led/led_r
+    chown system system /sys/class/sec/led/led_g
+    chown system system /sys/class/sec/led/led_b
+
+    chown system system /sys/class/leds/led_r/brightness
+    chown system system /sys/class/leds/led_g/brightness
+    chown system system /sys/class/leds/led_b/brightness
+    chown system system /sys/class/leds/led_r/delay_on
+    chown system system /sys/class/leds/led_g/delay_on
+    chown system system /sys/class/leds/led_b/delay_on
+    chown system system /sys/class/leds/led_r/delay_off
+    chown system system /sys/class/leds/led_g/delay_off
+    chown system system /sys/class/leds/led_b/delay_off
+    chown system system /sys/class/leds/led_r/blink
+    chown system system /sys/class/leds/led_g/blink
+    chown system system /sys/class/leds/led_b/blink
+
+    chown system system /sys/class/sec/led/led_pattern
+    chown system system /sys/class/sec/led/led_blink
+    chown system system /sys/class/sec/led/led_br_lev
+    chown system system /sys/class/sec/led/led_lowpower
 
 # Audio
     mkdir /data/firmware 0770 media system
@@ -150,6 +172,10 @@ on boot
     # Set up kernel tracing, but disable it by default
     chmod 0222 /sys/kernel/debug/tracing/trace_marker
     write /sys/kernel/debug/tracing/tracing_on 0
+
+# tui
+    chmod 0660 /dev/t-base-tui
+    chown system system /dev/t-base-tui
 
 # Switch Device
     chown system radio /sys/class/sec/switch/uart_en
@@ -359,8 +385,14 @@ on fs
     mount_all /fstab.universal5433
     setprop ro.crypto.fuse_sdcard true
 
+# Permissions for ION
+    chmod 0660 /sys/class/ion_cma/ion_video_ext/isolated
+    chown system system /sys/class/ion_cma/ion_video_ext/isolated
+
 # Support Preload install apks
-    mkdir /preload 0771 system system
+    wait /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev ro barrier=1
+    setprop storage.preload.complete 1
 
     # For Absolute Persistence Partition
     mkdir /persdata 0755 system system
@@ -615,9 +647,12 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     user root
     group system inet net_raw
     ioprio be 0
-	disabled
+    disabled
 
-
+service cameraserver /system/bin/cameraserver
+    class main
+    user cameraserver
+    group media_rw audio camera drmrpc inet shell sdcard_r system
 
 # Copy DRM Key
     copy /system/app/wv.keys /factory/wv.keys
@@ -812,7 +847,7 @@ service rtc_log /system/bin/rtc_log.sh
     oneshot
 
 # umount service
-service umount_service /system/bin/umount -D /preload
+service umount_service /system/bin/umount /preload
     disabled
     oneshot
 
