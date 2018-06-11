@@ -118,6 +118,8 @@ static void dump_tasks_info(void)
 }
 #endif
 
+
+
 #if defined(CONFIG_ZSWAP)
 extern atomic_t zswap_pool_pages;
 extern atomic_t zswap_stored_pages;
@@ -152,8 +154,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	si_meminfo(&si);
 
 	other_free += other_file;
-
-	tune_lmk_param(&other_free, &other_file, sc);
 
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
