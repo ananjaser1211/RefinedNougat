@@ -6933,4 +6933,5 @@ fs/ufs/ufs.mod.c
 fs/ufs/ufs.mod.o
 fs/ufs/ufs.o
 fs/ufs/util.o
-
+Helios/out/
+Helios/N910C_Kernel/n910c/*.img
