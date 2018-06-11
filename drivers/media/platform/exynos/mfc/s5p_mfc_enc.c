@@ -898,8 +898,8 @@ static struct v4l2_queryctrl controls[] = {
 		.id = V4L2_CID_MPEG_VIDEO_QOS_RATIO,
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "QoS ratio value",
-		.minimum = 0,
-		.maximum = 1000,
+		.minimum = 20,
+		.maximum = 200,
 		.step = 10,
 		.default_value = 100,
 	},
@@ -1499,20 +1499,11 @@ static struct s5p_mfc_ctrl_cfg mfc_ctrl_list[] = {
 
 int s5p_mfc_enc_ctx_ready(struct s5p_mfc_ctx *ctx)
 {
-	struct s5p_mfc_dev *dev = ctx->dev;	
 	struct s5p_mfc_enc *enc = ctx->enc_priv;
 	struct s5p_mfc_enc_params *p = &enc->params;
 
 	mfc_debug(2, "src=%d, dst=%d, state=%d\n",
 		  ctx->src_queue_cnt, ctx->dst_queue_cnt, ctx->state);
-
-	/* Skip ready check temporally */
-	spin_lock_irq(&dev->condlock);
-	if (test_bit(ctx->num, &dev->ctx_stop_bits)) {
-		spin_unlock_irq(&dev->condlock);
-		return 0;
-	}
-	spin_unlock_irq(&dev->condlock);		  
 
 	/* context is ready to make header */
 	if (ctx->state == MFCINST_GOT_INST && ctx->dst_queue_cnt >= 1) {
@@ -2782,18 +2773,11 @@ static int vidioc_qbuf(struct file *file, void *priv, struct v4l2_buffer *buf)
 	int ret = -EINVAL;
 
 	mfc_debug_enter();
-
 	mfc_debug(2, "Enqueued buf: %d (type = %d)\n", buf->index, buf->type);
 	if (ctx->state == MFCINST_ERROR) {
 		mfc_err_ctx("Call on QBUF after unrecoverable error.\n");
 		return -EIO;
 	}
-
-	if (V4L2_TYPE_IS_MULTIPLANAR(buf->type) && !buf->length) {
-		mfc_err_ctx("multiplanar but length is zero\n");
-		return -EIO;
-	}
-
 	if (buf->type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
 		ret = vb2_qbuf(&ctx->vq_src, buf);
 		if (!ret) {
@@ -2841,10 +2825,9 @@ static int vidioc_qbuf(struct file *file, void *priv, struct v4l2_buffer *buf)
 calc_again:
 #endif
 			if (ctx->last_framerate != 0 &&
-				((ctx->last_framerate != ctx->framerate) || ctx->qos_changed)) {
-				mfc_debug(2, "fps changed: %d -> %d (%s)\n",
-					ctx->framerate, ctx->last_framerate,
-					ctx->use_extra_qos ? "extra" : "normal");
+				ctx->last_framerate != ctx->framerate) {
+				mfc_debug(2, "fps changed: %d -> %d\n",
+					ctx->framerate, ctx->last_framerate);
 				ctx->framerate = ctx->last_framerate;
 				s5p_mfc_qos_on(ctx);
 			}
@@ -3568,18 +3551,7 @@ static int set_ctrl_val(struct s5p_mfc_ctx *ctx, struct v4l2_control *ctrl)
 			ctx->cacheable = 0;
 		break;
 	case V4L2_CID_MPEG_VIDEO_QOS_RATIO:
-		if (ctrl->value > 150)
-			ctrl->value = 1000;
-		if (ctrl->value == 0) {
-			ctrl->value = 100;
-			ctx->use_extra_qos = 1;
-			mfc_info_ctx("QOS_RATIO is 0, use extra qos!\n");
-		} else {
-			ctx->use_extra_qos = 0;
-			mfc_info_ctx("QOS_RATIO is %d, use extra qos!\n", ctrl->value);
-		}
 		ctx->qos_ratio = ctrl->value;
-		ctx->qos_changed = 1;
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_MAX_QP:
 	case V4L2_CID_MPEG_VIDEO_H263_MAX_QP:
@@ -4077,29 +4049,21 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 	struct s5p_mfc_enc *enc = ctx->enc_priv;
 	int index = 0;
 	int aborted = 0;
-	int ret = 0;	
 
-	mfc_info_ctx("enc stop_streaming is called, hw_lock : %d, type : %d\n",
-				test_bit(ctx->num, &dev->hw_lock), q->type);
-	MFC_TRACE_CTX("** ENC streamoff(type:%d)\n", q->type);
+	if (need_to_wait_frame_start(ctx)) {
+		ctx->state = MFCINST_ABORT;
+		if (s5p_mfc_wait_for_done_ctx(ctx,
+				S5P_FIMV_R2H_CMD_FRAME_DONE_RET))
+			s5p_mfc_cleanup_timeout(ctx);
+		aborted = 1;
+	}
 
-	spin_lock_irq(&dev->condlock);
-	set_bit(ctx->num, &dev->ctx_stop_bits);
-	clear_bit(ctx->num, &dev->ctx_work_bits);
-	spin_unlock_irq(&dev->condlock);
-
-	/* If a H/W operation is in progress, wait for it complete */
-	 if (need_to_wait_nal_abort(ctx)) {
+	if (need_to_wait_nal_abort(ctx)) {
+		ctx->state = MFCINST_ABORT;
 		if (s5p_mfc_wait_for_done_ctx(ctx,
 				S5P_FIMV_R2H_CMD_NAL_ABORT_RET))
 			s5p_mfc_cleanup_timeout(ctx);
 		aborted = 1;
-	} else if (test_bit(ctx->num, &dev->hw_lock)) {
-		ret = wait_event_timeout(ctx->queue,
-				(test_bit(ctx->num, &dev->hw_lock) == 0),
-				msecs_to_jiffies(MFC_INT_TIMEOUT));
-		if (ret == 0)
-			mfc_err_ctx("wait for event failed\n");		
 	}
 
 	if (enc->in_slice || enc->buf_full) {
@@ -4149,24 +4113,8 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 
 	spin_unlock_irqrestore(&dev->irqlock, flags);
 
-	if (aborted || ctx->state == MFCINST_FINISHING)
+	if (aborted)
 		ctx->state = MFCINST_RUNNING;
-
-	spin_lock_irq(&dev->condlock);
-	clear_bit(ctx->num, &dev->ctx_stop_bits);
-	spin_unlock_irq(&dev->condlock);
-
-	mfc_debug(2, "buffer cleanup is done in stop_streaming, type : %d\n", q->type);
-
-	if (s5p_mfc_enc_ctx_ready(ctx)) {
-		spin_lock_irq(&dev->condlock);
-		set_bit(ctx->num, &dev->ctx_work_bits);
-		spin_unlock_irq(&dev->condlock);
-	}
-	spin_lock_irq(&dev->condlock);
-	if (dev->ctx_work_bits)
-		queue_work(dev->sched_wq, &dev->sched_work);
-	spin_unlock_irq(&dev->condlock);
 
 	return 0;
 }

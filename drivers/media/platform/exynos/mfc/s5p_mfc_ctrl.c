@@ -37,8 +37,6 @@ int s5p_mfc_alloc_firmware(struct s5p_mfc_dev *dev)
 	unsigned int base_align;
 	unsigned int firmware_size;
 	void *alloc_ctx;
-	struct s5p_mfc_buf_size_v6 *buf_size;
-	buf_size = dev->variant->buf_size->buf;
 
 	mfc_debug_enter();
 
@@ -58,8 +56,7 @@ int s5p_mfc_alloc_firmware(struct s5p_mfc_dev *dev)
 
 	alloc_ctx = dev->alloc_ctx_fw;
 
-	dev->fw_info.alloc = s5p_mfc_mem_alloc_priv(alloc_ctx,
-			firmware_size + buf_size->dev_ctx);
+	dev->fw_info.alloc = s5p_mfc_mem_alloc_priv(alloc_ctx, firmware_size);
 	if (IS_ERR(dev->fw_info.alloc)) {
 		dev->fw_info.alloc = 0;
 		printk(KERN_ERR "Allocating bitprocessor buffer failed\n");
@@ -98,8 +95,7 @@ int s5p_mfc_alloc_firmware(struct s5p_mfc_dev *dev)
 #ifdef CONFIG_EXYNOS_CONTENT_PATH_PROTECTION
 	alloc_ctx = dev->alloc_ctx_drm_fw;
 
-	dev->drm_fw_info.alloc = s5p_mfc_mem_alloc_priv(alloc_ctx,
-					firmware_size + buf_size->dev_ctx);
+	dev->drm_fw_info.alloc = s5p_mfc_mem_alloc_priv(alloc_ctx, firmware_size);
 	if (IS_ERR(dev->drm_fw_info.alloc)) {
 		/* Release normal F/W buffer */
 		s5p_mfc_mem_free_priv(dev->fw_info.alloc);
@@ -405,14 +401,9 @@ int mfc_init_hw(struct s5p_mfc_dev *dev, enum mfc_buf_usage_type buf_type)
 	}
 	mfc_debug(2, "Ok, now will write a command to init the system\n");
 	if (s5p_mfc_wait_for_done_dev(dev, S5P_FIMV_R2H_CMD_SYS_INIT_RET)) {
-		mfc_err_dev("Failed to SYS_INIT\n");
-#if defined(CONFIG_SOC_EXYNOS5433)
-		s5p_mfc_check_hw_state(dev);
-		BUG();
-#else
+		mfc_err_dev("Failed to load firmware\n");
 		ret = -EIO;
 		goto err_init_hw;
-#endif
 	}
 
 	dev->int_cond = 0;
@@ -527,8 +518,7 @@ int s5p_mfc_sleep(struct s5p_mfc_dev *dev)
 {
 	struct s5p_mfc_ctx *ctx;
 	int ret;
-	int old_state,i;
-	int need_cache_flush = 0;	
+	int old_state;
 
 	mfc_debug_enter();
 
@@ -539,25 +529,8 @@ int s5p_mfc_sleep(struct s5p_mfc_dev *dev)
 
 	ctx = dev->ctx[dev->curr_ctx];
 	if (!ctx) {
-		for (i = 0; i < MFC_NUM_CONTEXTS; i++) {
-			if (dev->ctx[i]) {
-				ctx = dev->ctx[i];
-				break;
-			}
-		}
-		if (!ctx) {
-			mfc_err("no mfc context to run\n");
-			return -EINVAL;
-		} else {
-			mfc_info_dev("ctx is changed %d -> %d\n",
-					dev->curr_ctx, ctx->num);			
-			dev->curr_ctx = ctx->num;
-			if (dev->curr_ctx_drm != ctx->is_drm) {
-				need_cache_flush = 1;
-				mfc_info_dev("DRM attribute is changed %d->%d\n",
-						dev->curr_ctx_drm, ctx->is_drm);
-			}
-		}
+		mfc_err("no mfc context to run\n");
+		return -EINVAL;
 	}
 	old_state = ctx->state;
 	ctx->state = MFCINST_ABORT;
@@ -578,22 +551,6 @@ int s5p_mfc_sleep(struct s5p_mfc_dev *dev)
 	ctx->state = old_state;
 	s5p_mfc_clock_on(dev);
 	s5p_mfc_clean_dev_int_flags(dev);
-
-	if (need_cache_flush) {
-		s5p_mfc_cmd_host2risc(dev, S5P_FIMV_CH_CACHE_FLUSH, NULL);
-		if (s5p_mfc_wait_for_done_dev(dev, S5P_FIMV_R2H_CMD_CACHE_FLUSH_RET)) {
-			mfc_err_ctx("Failed to flush cache\n");
-			ret = -EINVAL;
-			goto err_mfc_sleep;
-		}
-
-		s5p_mfc_init_memctrl(dev, (ctx->is_drm ? MFCBUF_DRM : MFCBUF_NORMAL));
-		s5p_mfc_clock_off(dev);
-
-		dev->curr_ctx_drm = ctx->is_drm;
-		s5p_mfc_clock_on(dev);
-	}
-	
 	ret = s5p_mfc_sleep_cmd(dev);
 	if (ret) {
 		mfc_err_dev("Failed to send command to MFC - timeout.\n");

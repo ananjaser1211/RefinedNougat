@@ -31,8 +31,6 @@
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/plist.h>
-#include <linux/kref.h>
-#include <mach/smc.h>
 
 #include <asm/pgtable.h>
 
@@ -418,117 +416,9 @@ struct ion_exynos_cmadata {
 	int id;
 	char name[MAX_CONTIG_NAME + 1];
 	bool isolated_on_boot; /* set on boot-time. unset by isolated_store() */
-	bool secure;
 	struct mutex lock;
-	struct kref secure_ref;
 };
 
-static int __ion_secure_protect(struct device *dev)
-{
-	struct cma_info info;
-	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
-	int try = 2;
-	int ret;
-
-	if (dma_contiguous_info(dev, &info)) {
-		dev_err(dev, "Failed to retrieve region information\n");
-		return -EPERM;
-	}
-	do {
-		ret = exynos_smc(SMC_DRM_SECMEM_REGION_INFO, cmadata->id,
-				info.base, info.size);
-	} while (ret != 0 && --try > 0);
-	if (ret != 0) {
-		pr_crit("%s: failed smc call for region info, ret=%d\n",
-			__func__, ret);
-		return -EFAULT;
-	}
-
-	try = 2;
-	do {
-		ret = exynos_smc(SMC_DRM_SECMEM_REGION_PROT, cmadata->id,
-				SMC_PROTECTION_ENABLE, 0);
-	} while (ret != 0 && --try > 0);
-	if (ret != 0) {
-		pr_crit("%s: failed smc call for region prot, ret=%d\n",
-			__func__, ret);
-		return -EFAULT;
-	}
-
-	pr_info("%s: Successed smc call for region, ret %d\n",
-		__func__, ret);
-	return 0;
-}
-
-int ion_secure_protect(struct device *dev)
-{
-	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
-	if (!cmadata->secure) {
-		pr_err("%s: region %s is not secure region\n", __func__, cmadata->name);
-		return -EPERM;
-	}
-	if (atomic_inc_return(&cmadata->secure_ref.refcount) > 1)
-		return 0;
-
-	if (__ion_secure_protect(dev)) {
-		atomic_set(&cmadata->secure_ref.refcount, 0);
-		pr_crit("%s: protection failed for region %d\n",
-			__func__, cmadata->id);
-		return -EFAULT;
-	}
-	return 0;
-}
-
-static void __ion_secure_unprotect(struct kref *kref)
-{
-	struct ion_exynos_cmadata *cmadata = container_of(kref,
-					struct ion_exynos_cmadata, secure_ref);
-	BUG_ON(exynos_smc(SMC_DRM_SECMEM_REGION_PROT,
-				cmadata->id, SMC_PROTECTION_DISABLE, 0) != 0);
-}
-
-int ion_secure_unprotect(struct device *dev)
-{
-	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
-	if (!cmadata->secure) {
-		pr_err("%s: region %s is not secure region\n", __func__, cmadata->name);
-		return -EPERM;
-	}
-	kref_put(&cmadata->secure_ref, __ion_secure_unprotect);
-	return 0;
-}
-
-int ion_is_region_available(struct device *dev, unsigned long flags)
-{
-	struct cma_info info;
-	bool protected = !!(flags & ION_FLAG_PROTECTED);
-	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
-	bool region = (atomic_read(&cmadata->secure_ref.refcount) == 0)?
-		false : true;
-
-	if (protected == region) {
-		return 0;
-	} else {
-		if (!protected) {
-			pr_err("%s : region %s is protected, normal request is invalid\n",
-				__func__, cmadata->name);
-			return -EPERM;
-		} else {
-			if (dma_contiguous_info(dev, &info) != 0) {
-				dev_err(dev, "failed to retrieve region information\n");
-				return -ENODEV;
-			}
-			if (info.free != info.size) {
-				pr_err("%s : region %s is busy due to normal allocation of secure region\n",
-					__func__, cmadata->name);
-				pr_err("%s : region %s is now in-use, total = %zd, free = %zd\n",
-					__func__, cmadata->name, info.size, info.free);
-				return -EBUSY;
-			}
-			return 0;
-		}
-	}
-}
 static int ion_cma_device_name_match(struct device *dev, void *data)
 {
 	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
@@ -664,7 +554,7 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 
 	/* fixup of old DRM flags */
 	if (flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
-			ION_EXYNOS_MFC_INPUT_MASK | ION_EXYNOS_VIDEO_EXT2_MASK))
+			ION_EXYNOS_MFC_INPUT_MASK))
 		id = ION_EXYNOS_ID_VIDEO;
 
 	dev = device_find_child(contig_heap->dev, &id, ion_cma_device_id_match);
@@ -677,10 +567,6 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 	/* In order to avoid passing '0' to get_order() */
 	if (!align)
 		align = PAGE_SIZE;
-
-	ret = ion_is_region_available(dev, flags);
-	if (ret != 0)
-		return ret;
 
 	buffer->priv_virt = dma_alloc_from_contiguous(dev, len >> PAGE_SHIFT,
 					      get_order(align));
@@ -697,13 +583,7 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 				__func__, dev_name(dev));
 		return -ENOMEM;
 	}
-	if (buffer->flags & ION_FLAG_PROTECTED)
-		ret = ion_secure_protect(dev);
 
-	if (ret != 0) {
-		dma_release_from_contiguous(
-			dev, buffer->priv_virt, len >> PAGE_SHIFT);
-	}
 	return ret;
 }
 
@@ -716,7 +596,7 @@ static void ion_exynos_contig_heap_free(struct ion_buffer *buffer)
 
 	/* fixup of old DRM flags */
 	if (buffer->flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
-				ION_EXYNOS_MFC_INPUT_MASK | ION_EXYNOS_VIDEO_EXT2_MASK))
+				ION_EXYNOS_MFC_INPUT_MASK))
 		id = ION_EXYNOS_ID_VIDEO;
 
 	dev = device_find_child(contig_heap->dev, &id, ion_cma_device_id_match);
@@ -732,8 +612,6 @@ static void ion_exynos_contig_heap_free(struct ion_buffer *buffer)
 			page_to_phys((struct page *)buffer->priv_virt),
 			dev_name(dev));
 	}
-	if (buffer->flags & ION_FLAG_PROTECTED)
-		ion_secure_unprotect(dev);
 }
 
 static int ion_exynos_contig_heap_phys(struct ion_heap *heap,
@@ -1366,7 +1244,6 @@ struct exynos_ion_contig_region {
 	phys_addr_t base;
 	struct device dev;
 	bool isolated;
-	bool secure;
 };
 
 static int contig_region_cursor __initdata;
@@ -1451,22 +1328,6 @@ static int __init __fdt_init_exynos_ion(unsigned long node, const char *uname,
 		}
 
 	}
-	prop = of_get_flat_dt_prop(node, "secure", &len);
-	for (i = 0; prop && (unsigned long)i < (len / sizeof(long)); i++) {
-		int id;
-		int j;
-
-		id = be32_to_cpu(prop[i]);
-
-		for (j = 0; j < contig_region_cursor; j++) {
-			if (exynos_ion_contig_region[j].id == id) {
-				exynos_ion_contig_region[j].secure = true;
-				break;
-			}
-		}
-
-	}
-
 	return 0;
 }
 
@@ -1726,8 +1587,6 @@ static int __init ion_exynos_contigheap_init(void)
 		drvdata->id = exynos_ion_contig_region[i].id;
 		strncpy(drvdata->name, exynos_ion_contig_region[i].name,
 			MAX_CONTIG_NAME);
-		drvdata->secure = exynos_ion_contig_region[i].secure;
-		atomic_set(&drvdata->secure_ref.refcount, 0);
 
 		dev = device_create(ion_cma_class,
 				__init_contig_heap->dev, 0, drvdata,

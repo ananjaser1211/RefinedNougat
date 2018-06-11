@@ -44,7 +44,6 @@ static uint32_t secmem_regions[] = {
 	ION_EXYNOS_ID_MFC_SH,
 	ION_EXYNOS_ID_G2D_WFD,
 	ION_EXYNOS_ID_VIDEO,
-	ION_EXYNOS_ID_VIDEO_EXT,
 	ION_EXYNOS_ID_SECTBL,
 	ION_EXYNOS_ID_MFC_FW,
 	ION_EXYNOS_ID_MFC_NFW,
@@ -54,10 +53,9 @@ static char *secmem_regions_name[] = {
 	"mfc_sh",	/* 0 */
 	"g2d_wfd",	/* 1 */
 	"video",	/* 2 */
-	"video_ext",	/* 3 */
-	"sectbl",	/* 4 */
-	"mfc_fw",	/* 5 */
-	"mfc_nfw",	/* 6 */
+	"sectbl",	/* 3 */
+	"mfc_fw",	/* 4 */
+	"mfc_nfw",	/* 5 */
 	NULL
 };
 

@@ -71,7 +71,6 @@
 #define MFC_BASE_MASK		((1 << 17) - 1)
 
 #define FLAG_LAST_FRAME		0x80000000
-#define FLAG_CSD		0x20000000
 #define MFC_MAX_INTERVAL	(2 * USEC_PER_SEC)
 
 /* Command ID for smc */
@@ -100,7 +99,6 @@ enum {
 	FC_MFC_EXYNOS_ID_SECTBL        = 3,
 	FC_MFC_EXYNOS_ID_G2D_WFD       = 4,
 	FC_MFC_EXYNOS_ID_MFC_NFW       = 5,
-	FC_MFC_EXYNOS_ID_VIDEO_EXT     = 6,
 };
 
 #define SMC_FC_ID_MFC_SH(id)		((id) * 10 + FC_MFC_EXYNOS_ID_MFC_SH)
@@ -109,7 +107,6 @@ enum {
 #define SMC_FC_ID_SECTBL(id)		((id) * 10 + FC_MFC_EXYNOS_ID_SECTBL)
 #define SMC_FC_ID_G2D_WFD(id)		((id) * 10 + FC_MFC_EXYNOS_ID_G2D_WFD)
 #define SMC_FC_ID_MFC_NFW(id)		((id) * 10 + FC_MFC_EXYNOS_ID_MFC_NFW)
-#define SMC_FC_ID_VIDEO_EXT(id)		((id) * 10 + FC_MFC_EXYNOS_ID_VIDEO_EXT)
 
 /**
  * enum s5p_mfc_inst_type - The type of an MFC device node.
@@ -152,8 +149,6 @@ enum s5p_mfc_inst_state {
 	MFCINST_RUNNING_NO_OUTPUT,
 	MFCINST_ABORT_INST,
 	MFCINST_DPB_FLUSHING,
-	MFCINST_SPECIAL_PARSING,
-	MFCINST_SPECIAL_PARSING_NAL,
 };
 
 /**
@@ -195,6 +190,15 @@ enum mfc_buf_usage_type {
 	MFCBUF_INVALID = 0,
 	MFCBUF_NORMAL,
 	MFCBUF_DRM,
+};
+
+enum mfc_buf_process_type {
+	MFCBUFPROC_DEFAULT 		= 0x0,
+	MFCBUFPROC_COPY 		= (1 << 0),
+	MFCBUFPROC_SHARE 		= (1 << 1),
+	MFCBUFPROC_META 		= (1 << 2),
+	MFCBUFPROC_ANBSHARE		= (1 << 3),
+	MFCBUFPROC_ANBSHARE_NV12L	= (1 << 4),
 };
 
 struct s5p_mfc_ctx;
@@ -368,7 +372,6 @@ struct s5p_mfc_dev {
 	int curr_ctx;
 	int preempt_ctx;
 	unsigned long ctx_work_bits;
-	unsigned long ctx_stop_bits;	
 
 	atomic_t watchdog_cnt;
 	atomic_t watchdog_run;
@@ -754,8 +757,6 @@ struct s5p_mfc_dec {
 	struct mfc_user_shared_handle sh_handle;
 
 	int dynamic_ref_filled;
-
-	unsigned int err_sync_flag;	
 };
 
 struct s5p_mfc_enc {
@@ -878,7 +879,6 @@ struct s5p_mfc_ctx {
 	struct list_head qos_list;
 #endif
 	int qos_ratio;
-	int qos_changed;
 	int framerate;
 	int last_framerate;
 	int avg_framerate;
@@ -888,7 +888,7 @@ struct s5p_mfc_ctx {
 	int qp_max_change;
 
 	int is_max_fps;
-	int use_extra_qos;
+	int buf_process_type;
 
 	struct mfc_timestamp ts_array[MFC_TIME_INDEX];
 	struct list_head ts_list;
@@ -1022,10 +1022,6 @@ static inline unsigned int mfc_version(struct s5p_mfc_dev *dev)
 #endif
 #define FW_HAS_GOP2(dev)		(IS_MFCv8X(dev) &&			\
 					(dev->fw.date >= 0x150320))
-#define FW_HAS_SPECIAL_PARSING(dev)	((IS_MFCv8X(dev) &&			\
-					(dev->fw.date >= 0x160428)) ||		\
-					(IS_MFCv7X(dev) &&			\
-					(dev->fw.date >= 0x160519)))
 
 #define HW_LOCK_CLEAR_MASK		(0xFFFFFFFF)
 
@@ -1046,13 +1042,8 @@ static inline unsigned int mfc_version(struct s5p_mfc_dev *dev)
 	  (ctx->state == MFCINST_RUNNING)) &&	\
 	 test_bit(ctx->num, &ctx->dev->hw_lock))
 #define need_to_wait_nal_abort(ctx)		 \
-	(ctx->state == MFCINST_ABORT_INST)
-#define need_to_special_parsing(ctx)		\
-	((ctx->state == MFCINST_GOT_INST) ||	\
-	 (ctx->state == MFCINST_HEAD_PARSED))
-#define need_to_special_parsing_nal(ctx)	\
-	((ctx->state == MFCINST_RUNNING) ||	\
-	 (ctx->state == MFCINST_ABORT))
+	(((ctx->state == MFCINST_ABORT_INST)) && \
+	 test_bit(ctx->num, &ctx->dev->hw_lock))
 
 /* Extra information for Decoder */
 #define	DEC_SET_DUAL_DPB		(1 << 0)
@@ -1110,9 +1101,6 @@ int s5p_mfc_dec_ctx_ready(struct s5p_mfc_ctx *ctx);
 int s5p_mfc_enc_ctx_ready(struct s5p_mfc_ctx *ctx);
 int s5p_mfc_request_sec_pgtable(struct s5p_mfc_dev *dev);
 int s5p_mfc_release_sec_pgtable(struct s5p_mfc_dev *dev);
-#if defined(CONFIG_SOC_EXYNOS5433)
-int s5p_mfc_check_hw_state(struct s5p_mfc_dev *dev);
-#endif
 
 static inline int s5p_mfc_ctx_ready(struct s5p_mfc_ctx *ctx)
 {
