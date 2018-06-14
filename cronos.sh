@@ -47,6 +47,7 @@ CR_RAMDISK_N910CH=$CR_DIR/Helios/N910C
 CR_DTSFILES_N910S-L-K="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
 CR_CONFG_N910S-L-K=trelteskt_defconfig
 CR_VARIANT_N910S-L-K=N910S.L.K
+CR_RAMDISK_N910SLK=$CR_DIR/Helios/N910S
 ##########################################
 
 # Script functions
@@ -164,6 +165,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910SLK
        	    CR_CONFG=$CR_CONFG_N910SLK
             CR_DTSFILES=$CR_DTSFILES_N910SLK
+			CR_RAMDISK=$CR_RAMDISK_N910SLK			
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
