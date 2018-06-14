@@ -53,6 +53,16 @@ CR_DTSFILES_N910SLK="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_ope
 CR_CONFG_N910SLK=trelteskt_defconfig
 CR_VARIANT_N910SLK=N910S.L.K
 CR_RAMDISK_N910SLK=$CR_DIR/Helios/N910S
+# Device specific Variables [SM-N915S/L/K]
+CR_DTSFILES_N915SLK="exynos5433-tbelte_kor_open_07.dtb exynos5433-tbelte_kor_open_09.dtb exynos5433-tbelte_kor_open_11.dtb exynos5433-tbelte_kor_open_12.dtb exynos5433-tbelte_kor_open_14.dtb"
+CR_CONFG_N915SLK=tbelteskt_defconfig
+CR_VARIANT_N915SLK=N915S.L.K
+CR_RAMDISK_N915SLK=$CR_DIR/Helios/N915S
+# Device specific Variables [SM-N916S/L/K]
+CR_DTSFILES_N916SLK="exynos5433-tre3calte_kor_open_05.dtb exynos5433-tre3calte_kor_open_14.dtb"
+CR_CONFG_N916SLK=tre3caltelgt_defconfig
+CR_VARIANT_N916SLK=N916S.L.K
+CR_RAMDISK_N916SLK=$CR_DIR/Helios/N916S
 ##########################################
 
 # Script functions
@@ -137,8 +147,8 @@ clear
 echo "----------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "----------------------------------------------"
-PS3='Please select your option (1-4): '
-menuvar=("SM-N910C-H" "SM-N910S-L-K" "SM-N910U" "Exit")
+PS3='Please select your option (1-6): '
+menuvar=("SM-N910C-H" "SM-N910S-L-K" "SM-N910U" "SM-N915S" "SM-N916S" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
@@ -192,6 +202,48 @@ do
        	    CR_CONFG=$CR_CONFG_N910U
             CR_DTSFILES=$CR_DTSFILES_N910U
 			CR_RAMDISK=$CR_RAMDISK_N910U			
+	    BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-N915S")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_N915SLK kernel build..."
+            CR_VARIANT=$CR_VARIANT_N915SLK
+       	    CR_CONFG=$CR_CONFG_N915SLK
+            CR_DTSFILES=$CR_DTSFILES_N915SLK
+			CR_RAMDISK=$CR_RAMDISK_N915SLK			
+	    BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-N916S")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_N916SLK kernel build..."
+            CR_VARIANT=$CR_VARIANT_N916SLK
+       	    CR_CONFG=$CR_CONFG_N916SLK
+            CR_DTSFILES=$CR_DTSFILES_N916SLK
+			CR_RAMDISK=$CR_RAMDISK_N916SLK			
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
