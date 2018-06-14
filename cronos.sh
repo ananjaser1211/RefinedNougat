@@ -22,7 +22,6 @@ CR_TC=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
 CR_DTS=arch/arm/boot/dts
 CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
-CR_RAMDISK=$CR_DIR/Helios/Ramdisk
 CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Variables
@@ -43,6 +42,7 @@ export $CR_ARCH
 CR_DTSFILES_N910CH="exynos5433-tre_eur_open_07.dtb exynos5433-tre_eur_open_08.dtb exynos5433-tre_eur_open_09.dtb exynos5433-tre_eur_open_10.dtb exynos5433-tre_eur_open_12.dtb exynos5433-tre_eur_open_13.dtb exynos5433-tre_eur_open_14.dtb exynos5433-tre_eur_open_16.dtb"
 CR_CONFG_N910CH=trelte_00_defconfig
 CR_VARIANT_N910CH=N910C.H
+CR_RAMDISK_N910CH=$CR_DIR/Helios/N910C
 # Device specific Variables [SM-N910S/L/K]
 CR_DTSFILES_N910S-L-K="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
 CR_CONFG_N910S-L-K=trelteskt_defconfig
@@ -143,6 +143,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910CH
             CR_CONFG=$CR_CONFG_N910CH
             CR_DTSFILES=$CR_DTSFILES_N910CH
+			CR_RAMDISK=$CR_RAMDISK_N910CH
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
