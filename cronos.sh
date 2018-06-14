@@ -44,9 +44,9 @@ CR_CONFG_N910CH=trelte_00_defconfig
 CR_VARIANT_N910CH=N910C.H
 CR_RAMDISK_N910CH=$CR_DIR/Helios/N910C
 # Device specific Variables [SM-N910S/L/K]
-CR_DTSFILES_N910S-L-K="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
-CR_CONFG_N910S-L-K=trelteskt_defconfig
-CR_VARIANT_N910S-L-K=N910S.L.K
+CR_DTSFILES_N910SLK="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
+CR_CONFG_N910SLK=trelteskt_defconfig
+CR_VARIANT_N910SLK=N910S.L.K
 CR_RAMDISK_N910SLK=$CR_DIR/Helios/N910S
 ##########################################
 
@@ -161,7 +161,7 @@ do
         "SM-N910S-L-K")
             clear
             CLEAN_SOURCE
-            echo "Starting $CR_VARIANT_N910S-L-K kernel build..."
+            echo "Starting $CR_VARIANT_N910SLK kernel build..."
             CR_VARIANT=$CR_VARIANT_N910SLK
        	    CR_CONFG=$CR_CONFG_N910SLK
             CR_DTSFILES=$CR_DTSFILES_N910SLK
