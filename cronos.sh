@@ -43,9 +43,9 @@ export $CR_ARCH
 CR_DTSFILES_N910CH="exynos5433-tre_eur_open_07.dtb exynos5433-tre_eur_open_08.dtb exynos5433-tre_eur_open_09.dtb exynos5433-tre_eur_open_10.dtb exynos5433-tre_eur_open_12.dtb exynos5433-tre_eur_open_13.dtb exynos5433-tre_eur_open_14.dtb exynos5433-tre_eur_open_16.dtb"
 CR_CONFG_N910CH=trelte_00_defconfig
 CR_VARIANT_N910CH=N910C.H
-# Device specific Variables [SM-N910CS/L/K]
-CR_DTSFILES_N910S-L-K=""
-CR_CONFG_N910S-L-K=
+# Device specific Variables [SM-N910S/L/K]
+CR_DTSFILES_N910S-L-K="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
+CR_CONFG_N910S-L-K=trelteskt_defconfig
 CR_VARIANT_N910S-L-K=N910S.L.K
 ##########################################
 
