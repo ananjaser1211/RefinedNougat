@@ -458,9 +458,6 @@ on fs
     chown system system /sys/class/lcd/panel/hmt_bright
     chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
 
-# LCD ALPM Mode
-    chown system system /sys/class/lcd/panel/alpm
-
 # Permissions for TouchScreen
     chown system radio /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/input/enabled
@@ -709,6 +706,11 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     chown system system /sys/class/leds/led_g/blink
     chown system system /sys/class/leds/led_b/blink
 
+# Led cover
+    chmod 0660 /dev/ttySAC2
+    chown system system /dev/ttySAC2
+    chown system system /sys/class/sec/ledcover/cover_pwr
+
 # ARGOSD network_throughput
     chown system system /dev/network_throughput
 
@@ -859,3 +861,7 @@ on property:persist.sys.storage_preload=1
 
 on property:persist.sys.storage_preload=0
     start umount_service
+
+# Reactivation lock
+service reactived /system/bin/reactived
+    class late_start

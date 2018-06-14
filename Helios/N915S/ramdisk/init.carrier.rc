@@ -1,0 +1,32 @@
+on fs
+
+# MOBILE OFFICE Permanent memory access
+    mkdir /efs/security 0771 root root
+    chown radio system /efs/security
+    chmod 0771 /efs/security
+
+service dmb /system/bin/dmbserver
+    class main
+    user media
+    group system radio inet misc audio camera graphics net_bt net_bt_admin sdcard_rw sdcard_r shell media_rw
+
+# Support silent logging
+    mkdir /data/log 0775 system log
+    mkdir /data/misc/dhcp 0775 dhcp dhcp
+    chown dhcp dhcp /data/misc/dhcp
+    chmod 0777 /system/bin/diagexe
+    chmod 0755 /system/bin/ddexe
+    chmod 0755 /system/bin/smdexe
+
+# DIAG
+service DIAG-daemon /system/bin/diagexe
+    class main
+    user root
+    group system radio inet net_raw
+
+# IMS Stack
+    service imsd /system/bin/imsd
+    class main
+    socket imsd stream 0660 system system
+    user root
+    group system radio net_raw inet net_admin
