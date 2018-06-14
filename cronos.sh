@@ -43,6 +43,11 @@ CR_DTSFILES_N910CH="exynos5433-tre_eur_open_07.dtb exynos5433-tre_eur_open_08.dt
 CR_CONFG_N910CH=trelte_00_defconfig
 CR_VARIANT_N910CH=N910C.H
 CR_RAMDISK_N910CH=$CR_DIR/Helios/N910C
+# Device specific Variables [SM-N910U]
+CR_DTSFILES_N910U="exynos5433-trlte_eur_open_00.dtb exynos5433-trlte_eur_open_09.dtb exynos5433-trlte_eur_open_10.dtb exynos5433-trlte_eur_open_11.dtb exynos5433-trlte_eur_open_12.dtb"
+CR_CONFG_N910U=trlte_00_defconfig
+CR_VARIANT_N910U=N910U
+CR_RAMDISK_N910U=$CR_DIR/Helios/N910U
 # Device specific Variables [SM-N910S/L/K]
 CR_DTSFILES_N910SLK="exynos5433-trelte_kor_open_06.dtb exynos5433-trelte_kor_open_07.dtb exynos5433-trelte_kor_open_09.dtb exynos5433-trelte_kor_open_11.dtb exynos5433-trelte_kor_open_12.dtb"
 CR_CONFG_N910SLK=trelteskt_defconfig
@@ -132,8 +137,8 @@ clear
 echo "----------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "----------------------------------------------"
-PS3='Please select your option (1-3): '
-menuvar=("SM-N910C-H" "SM-N910S-L-K" "Exit")
+PS3='Please select your option (1-4): '
+menuvar=("SM-N910C-H" "SM-N910S-L-K" "SM-N910U" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
@@ -174,11 +179,32 @@ do
             echo "$CR_VARIANT kernel build finished."
             echo "$CR_VARIANT Ready at $CR_OUT"
             echo "Combined DTB Size = $sizT Kb"
-	    echo "Press Any key to end the script"
+            echo "Press Any key to end the script"
             echo "----------------------------------------------"
             read -n1 -r key
             break
             ;;
+        "SM-N910U")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_N910U kernel build..."
+            CR_VARIANT=$CR_VARIANT_N910U
+       	    CR_CONFG=$CR_CONFG_N910U
+            CR_DTSFILES=$CR_DTSFILES_N910U
+			CR_RAMDISK=$CR_RAMDISK_N910U			
+	    BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;			
         "Exit")
             break
             ;;
