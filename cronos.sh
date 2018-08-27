@@ -18,7 +18,7 @@
 
 # Directory Contol
 CR_DIR=$(pwd)
-CR_TC=/home/elite/android/toolchain/arm-eabi-4.8/bin/arm-eabi-
+CR_TC=~/Android/Kernels/Toolchains/arm-eabi-4.8/bin/arm-eabi-
 CR_DTS=arch/arm/boot/dts
 CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
@@ -70,48 +70,48 @@ CLEAN_SOURCE()
 {
 echo "----------------------------------------------"
 echo " "
-echo "Cleaning"	
+echo "Cleaning"
 #make clean
 #make mrproper
 # rm -r -f $CR_OUT/*
 rm -r -f $CR_DTB
 rm -rf $CR_DTS/.*.tmp
 rm -rf $CR_DTS/.*.cmd
-rm -rf $CR_DTS/*.dtb	
+rm -rf $CR_DTS/*.dtb
 echo " "
-echo "----------------------------------------------"	
+echo "----------------------------------------------"
 }
 DIRTY_SOURCE()
 {
 echo "----------------------------------------------"
 echo " "
-echo "Cleaning"	
+echo "Cleaning"
 # make clean
 # make mrproper
 # rm -r -f $CR_OUT/*
 rm -r -f $CR_DTB
 rm -rf $CR_DTS/.*.tmp
 rm -rf $CR_DTS/.*.cmd
-rm -rf $CR_DTS/*.dtb	
+rm -rf $CR_DTS/*.dtb
 echo " "
-echo "----------------------------------------------"	
+echo "----------------------------------------------"
 }
 BUILD_ZIMAGE()
 {
 	echo "----------------------------------------------"
 	echo " "
-	echo "Building zImage for $CR_VARIANT"	
+	echo "Building zImage for $CR_VARIANT"
 	export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE
 	make  $CR_CONFG
 	make -j$CR_JOBS
 	echo " "
-	echo "----------------------------------------------"	
+	echo "----------------------------------------------"
 }
 BUILD_DTB()
 {
 	echo "----------------------------------------------"
 	echo " "
-	echo "Building DTB for $CR_VARIANT"	
+	echo "Building DTB for $CR_VARIANT"
 	export $CR_ARCH
 	export CROSS_COMPILE=$CR_TC
 	export ANDROID_MAJOR_VERSION=$CR_ANDROID
@@ -124,7 +124,7 @@ BUILD_DTB()
 	echo "Combined DTB Size = $sizT Kb"
 	rm -rf $CR_DTS/.*.tmp
 	rm -rf $CR_DTS/.*.cmd
-	rm -rf $CR_DTS/*.dtb	
+	rm -rf $CR_DTS/*.dtb
 	echo " "
 	echo "----------------------------------------------"
 }
@@ -180,7 +180,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910SLK
        	    CR_CONFG=$CR_CONFG_N910SLK
             CR_DTSFILES=$CR_DTSFILES_N910SLK
-			CR_RAMDISK=$CR_RAMDISK_N910SLK			
+			CR_RAMDISK=$CR_RAMDISK_N910SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -201,7 +201,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910U
        	    CR_CONFG=$CR_CONFG_N910U
             CR_DTSFILES=$CR_DTSFILES_N910U
-			CR_RAMDISK=$CR_RAMDISK_N910U			
+			CR_RAMDISK=$CR_RAMDISK_N910U
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -222,7 +222,7 @@ do
             CR_VARIANT=$CR_VARIANT_N915SLK
        	    CR_CONFG=$CR_CONFG_N915SLK
             CR_DTSFILES=$CR_DTSFILES_N915SLK
-			CR_RAMDISK=$CR_RAMDISK_N915SLK			
+			CR_RAMDISK=$CR_RAMDISK_N915SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -243,7 +243,7 @@ do
             CR_VARIANT=$CR_VARIANT_N916SLK
        	    CR_CONFG=$CR_CONFG_N916SLK
             CR_DTSFILES=$CR_DTSFILES_N916SLK
-			CR_RAMDISK=$CR_RAMDISK_N916SLK			
+			CR_RAMDISK=$CR_RAMDISK_N916SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -256,7 +256,7 @@ do
             echo "----------------------------------------------"
             read -n1 -r key
             break
-            ;;			
+            ;;
         "Exit")
             break
             ;;
