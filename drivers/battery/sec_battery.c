@@ -9,9 +9,11 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
-
-
 #include <linux/battery/sec_battery.h>
+#include <linux/moduleparam.h>
+
+static int wl_polling = 10;
+module_param(wl_polling, int, 0644);
 
 bool slate_mode_state;
 static struct device_attribute sec_battery_attrs[] = {
@@ -657,7 +659,7 @@ static bool sec_bat_ovp_uvlo_result(
 			battery->is_recharging = false;
 			/* Take the wakelock during 10 seconds
 			   when over-voltage status is detected	 */
-			wake_lock_timeout(&battery->vbus_wake_lock, HZ * 10);
+			wake_lock_timeout(&battery->vbus_wake_lock, HZ * wl_polling);
 			break;
 		}
 		power_supply_changed(&battery->psy_bat);
@@ -1982,7 +1984,7 @@ static void sec_bat_do_fullcharged(
 	 * activated wake lock in a few seconds
 	 */
 	if (battery->pdata->polling_type == SEC_BATTERY_MONITOR_ALARM)
-		wake_lock_timeout(&battery->vbus_wake_lock, HZ * 10);
+		wake_lock_timeout(&battery->vbus_wake_lock, HZ * wl_polling);
 }
 
 static bool sec_bat_fullcharged_check(
@@ -2606,7 +2608,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 	 * if cable is connected and disconnected,
 	 * activated wake lock in a few seconds
 	 */
-	wake_lock_timeout(&battery->vbus_wake_lock, HZ * 10);
+	wake_lock_timeout(&battery->vbus_wake_lock, HZ * wl_polling);
 
 	if (battery->cable_type == POWER_SUPPLY_TYPE_BATTERY ||
 		((battery->pdata->cable_check_type &

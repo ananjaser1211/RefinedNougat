@@ -1,4 +1,4 @@
-# Generated
+nt# Generated
 
 cmd_flags
 include/config/
@@ -7025,5 +7025,17 @@ drivers/sensorhub/brcm/factory/.pressure_lps25h.o.cmd
 drivers/sensorhub/brcm/factory/pressure_lps25h.o
 drivers/video/exynos/panels/.s6e3hf2_mipi_lcd.o.cmd
 drivers/video/exynos/panels/s6e3hf2_mipi_lcd.o
+drivers/cpufreq/.cpufreq_conservative.o.cmd
+drivers/cpufreq/.cpufreq_governor.o.cmd
+drivers/cpufreq/.cpufreq_ondemand.o.cmd
+drivers/cpufreq/.cpufreq_powersave.o.cmd
+drivers/cpufreq/.cpufreq_smartass2.o.cmd
+drivers/cpufreq/.cpufreq_zzmoove.o.cmd
+drivers/cpufreq/cpufreq_conservative.o
+drivers/cpufreq/cpufreq_governor.o
+drivers/cpufreq/cpufreq_ondemand.o
+drivers/cpufreq/cpufreq_powersave.o
+drivers/cpufreq/cpufreq_smartass2.o
+drivers/cpufreq/cpufreq_zzmoove.o
 
 
