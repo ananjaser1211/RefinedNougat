@@ -24,6 +24,7 @@
 #include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/cpumask.h>
+#include <linux/interrupt.h>
 #include <linux/sec_argos.h>
 
 #define ARGOS_NAME "argos"
@@ -294,13 +295,17 @@ int argos_task_affinity_apply(int dev_num, bool enable)
 	list_for_each_entry(this, head, entry) {
 		if (enable) {
 			if (*hotplug_disable == false) {
-				argos_dm_hotplug_disable();
+#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
+				exynos_dm_hotplug_disable();
+#endif
 				*hotplug_disable = true;
 			}
 			mask = this->affinity_cpu_mask;
 		} else {
 			if (*hotplug_disable == true) {
-				argos_dm_hotplug_enable();
+#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
+				exynos_dm_hotplug_enable();
+#endif
 				*hotplug_disable = false;
 			}
 			mask = this->default_cpu_mask;
@@ -332,13 +337,17 @@ int argos_irq_affinity_apply(int dev_num, bool enable)
 	list_for_each_entry(this, head, entry) {
 		if (enable) {
 			if (*hotplug_disable == false) {
-				argos_dm_hotplug_disable();
+#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
+				exynos_dm_hotplug_disable();
+#endif
 				*hotplug_disable = true;
 			}
 			mask = this->affinity_cpu_mask;
 		} else {
 			if (*hotplug_disable == true) {
-				argos_dm_hotplug_enable();
+#ifdef CONFIG_EXYNOS5_DYNAMIC_CPU_HOTPLUG
+				exynos_dm_hotplug_enable();
+#endif
 				*hotplug_disable = false;
 			}
 			mask = this->default_cpu_mask;
@@ -772,3 +781,4 @@ module_exit(argos_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("SAMSUNG Electronics");
 MODULE_DESCRIPTION("ARGOS DEVICE");
+
