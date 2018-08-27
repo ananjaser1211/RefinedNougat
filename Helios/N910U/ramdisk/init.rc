@@ -8,7 +8,11 @@ import /init.usb.rc
 import /init.${ro.hardware}.rc
 import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
+import /init.trace.rc
+import /init.carrier.rc
+import /init.sec_debug.rc
 import /init.container.rc
+import /init.rilcommon.rc
 import /init.fac.rc
 
 on early-init

@@ -709,6 +709,11 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     chown system system /sys/class/leds/led_g/blink
     chown system system /sys/class/leds/led_b/blink
 
+# Led cover
+    chmod 0660 /dev/ttySAC2
+    chown system system /dev/ttySAC2
+    chown system system /sys/class/sec/ledcover/cover_pwr
+
 # ARGOSD network_throughput
     chown system system /dev/network_throughput
 
@@ -768,6 +773,25 @@ on property:ro.debuggable=1
     write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
     write /sys/module/fiq_debugger/parameters/kgdb_enable 1
 
+# ITP mode enter/exit
+on property:ril.cbd.modechan=0
+    restart ril-daemon
+
+on property:ril.cbd.modechan=2
+    restart ril-daemon
+
+# Modem Logging daemon
+service ML-daemon /system/bin/mlexe
+    class main
+    user root
+    group system radio inet net_raw
+
+# IPSec for VOLTE
+service ipsec-daemon /system/bin/IPSecService
+    class main
+    socket ipsec_socket stream 660 system system
+    user system
+    group system net_raw inet net_admin
 
 # LPM
 on property:ro.bootmode=charger

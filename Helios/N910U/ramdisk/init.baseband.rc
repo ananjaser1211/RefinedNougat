@@ -36,3 +36,19 @@ on property:ro.debug_level=0x494d
         write /d/tracing/events/modem_if/mif_log/enable 1
         write /d/tracing/tracing_on 1
         write /sys/module/modem_utils/parameters/dflags 13
+
+on boot
+
+# for datarouter
+    chown system system /dev/dun
+    chown system system /dev/ttyGS0
+    chown system system /dev/ttyGS1
+    chown system system /dev/ttyGS2
+    chown system system /dev/ttyGS3
+
+# ExyRng startup
+service exyrngd /system/bin/exyrngd -b
+    user root
+    group root
+    class main
+    oneshot
