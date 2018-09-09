@@ -7,15 +7,8 @@ on boot
     chown system system /dev/ttyGS3
 
 on fs
-# DIAG
+#RIL diagexe for CP
 service DIAG-daemon /system/bin/diagexe
     class main
     user root
     group system radio inet net_raw
-
-# IMS Stack
-    service imsd /system/bin/imsd
-    class main
-    socket imsd stream 0660 system system
-    user root
-    group system radio net_raw inet net_admin

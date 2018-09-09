@@ -30,25 +30,3 @@ service cpboot-daemon /sbin/cbd -d -t xmm72xx_lli -b l -m l -p 13
     seclabel u:r:cbd:s0
 on property:persist.sys.cpboot=disable
     stop cpboot-daemon
-
-on property:ro.debug_level=0x494d
-	write /d/tracing/buffer_size_kb 1408
-        write /d/tracing/events/modem_if/mif_log/enable 1
-        write /d/tracing/tracing_on 1
-        write /sys/module/modem_utils/parameters/dflags 13
-
-on boot
-
-# for datarouter
-    chown system system /dev/dun
-    chown system system /dev/ttyGS0
-    chown system system /dev/ttyGS1
-    chown system system /dev/ttyGS2
-    chown system system /dev/ttyGS3
-
-# ExyRng startup
-service exyrngd /system/bin/exyrngd -b
-    user root
-    group root
-    class main
-    oneshot
