@@ -45,7 +45,7 @@ CR_VARIANT_N910CH=N910C.H
 CR_RAMDISK_N910CH=$CR_DIR/Helios/N910C
 # Device specific Variables [SM-N910U]
 CR_DTSFILES_N910U="exynos5433-trlte_eur_open_00.dtb exynos5433-trlte_eur_open_09.dtb exynos5433-trlte_eur_open_10.dtb exynos5433-trlte_eur_open_11.dtb exynos5433-trlte_eur_open_12.dtb"
-CR_CONFG_N910U=trlte_00_defconfig
+CR_CONFG_N910U=trhplte_00_defconfig
 CR_VARIANT_N910U=N910U
 CR_RAMDISK_N910U=$CR_DIR/Helios/N910U
 # Device specific Variables [SM-N910S/L/K]
