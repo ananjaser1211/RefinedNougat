@@ -41,7 +41,7 @@
 
 # gscalers
 /dev/video23              0660   media      graphics
-/dev/video26              0660   media      graphics
+/dev/video26              0660   media      drmrpc
 /dev/video24              0660   media      graphics
 /dev/video27              0660   media      graphics
 /dev/video29              0660   media      graphics
@@ -52,8 +52,8 @@
 # mscalers
 /dev/video50              0660   media      graphics
 /dev/video51              0660   media      graphics
-/dev/m2m1shot_scaler0     0660   cameraserver     graphics
-/dev/m2m1shot_scaler1     0660   cameraserver     graphics
+/dev/m2m1shot_scaler0     0660   cameraserver     m2mscaler
+/dev/m2m1shot_scaler1     0660   cameraserver       m2mscaler
 
 /dev/video55              0666   system     graphics
 /dev/fimg2d               0666   system     graphics
