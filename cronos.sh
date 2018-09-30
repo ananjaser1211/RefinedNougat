@@ -18,7 +18,7 @@
 
 # Directory Contol
 CR_DIR=$(pwd)
-CR_TC=~/Refined/arm-eabi-4.8/bin/arm-eabi-
+CR_TC=~/Android/Toolchains/arm-eabi-7.0/bin/arm-eabi-
 CR_DTS=arch/arm/boot/dts
 CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
