@@ -3763,6 +3763,8 @@ static uint8_t parse_861_short_descriptors(
 				MHL_TX_EDID_INFO(
 				    "EDID -> Short Desc Video Cap Block\n");
 				break;
+			default:
+				break;
 
 			case ETC_COLORIMETRY_DATA_BLOCK:
 				p_colorimetry =
