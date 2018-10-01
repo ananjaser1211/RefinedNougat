@@ -242,10 +242,9 @@ static ssize_t terminal_version_store(struct device *dev,
 	printk(KERN_DEBUG "usb: %s buf=%s\n", __func__, buf);
 	/* only set ncm ready when terminal verision value is not zero */
 	if(value)
-		set_ncm_ready(true);
+	set_ncm_ready(true);
     else 
-        set_ncm_ready(false);
-
+    set_ncm_ready(false);
 	return size;
 }
 

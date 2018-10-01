@@ -1027,7 +1027,7 @@ static void mass_storage_function_enable(struct android_usb_function *f)
 	static int msc_initialized;
 
 	if (msc_initialized)
-		return;
+	return;
 
 	prev_nluns = config->fsg.nluns;
 
@@ -1035,13 +1035,13 @@ static void mass_storage_function_enable(struct android_usb_function *f)
 		strlcpy(buf, lun_info, sizeof(buf));
 		b = strim(buf);
 
-		while (b) {
+	while (b) {
 			lun_type = strsep(&b, ",");
-			if (lun_type)
+		if (lun_type)
 				number_of_luns =
 					mass_storage_lun_init(f, lun_type);
-				if (number_of_luns <= 0)
-					return;
+			if (number_of_luns <= 0)
+			return;
 		}
 	} else {
 		pr_debug("No extra msc lun required.\n");
@@ -1051,7 +1051,7 @@ static void mass_storage_function_enable(struct android_usb_function *f)
 	err = fsg_add_lun(common, cdev, &config->fsg, number_of_luns);
 	if (err) {
 		pr_err("Failed adding LUN.\n");
-		return;
+	return;
 	}
 
 	pr_debug("fsg.nluns:%d\n", config->fsg.nluns);

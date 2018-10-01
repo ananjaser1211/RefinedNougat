@@ -1202,13 +1202,13 @@ static void conn_gadget_cleanup(void)
 
 	if (!_conn_gadget_dev) {
 		CONN_GADGET_ERR("_conn_gadget_dev is not allocated\n");
-		return ;
+	return ;
 	}
 
 	misc_deregister(&conn_gadget_device);
 
     if (_conn_gadget_dev->rd_queue_buf)
-        vfree(_conn_gadget_dev->rd_queue_buf);
+    vfree(_conn_gadget_dev->rd_queue_buf);
 
 	kfree(_conn_gadget_dev);
 	_conn_gadget_dev = NULL;
