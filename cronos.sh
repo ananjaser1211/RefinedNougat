@@ -18,14 +18,14 @@
 
 # Directory Contol
 CR_DIR=$(pwd)
-CR_TC=~/Android/Toolchains/arm-eabi-7.0/bin/arm-eabi-
+CR_TC=~/Android/Toolchains/gcc-linaro-6.1.1-arm-eabi/bin/arm-eabi-
 CR_DTS=arch/arm/boot/dts
 CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
 CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Variables
-CR_VERSION=V1.4-NN
+CR_VERSION=V1.5-BETA
 CR_NAME=Helios_Kernel
 CR_JOBS=9
 CR_ANDROID=7

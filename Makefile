@@ -195,7 +195,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 
 ARCH		?=arm
-CROSS_COMPILE	?=~/Android/Toolchains/arm-eabi-7.0/bin/arm-eabi-
+CROSS_COMPILE	?=~/Android/Toolchains/gcc-linaro-6.1.1-arm-eabi/bin/arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
