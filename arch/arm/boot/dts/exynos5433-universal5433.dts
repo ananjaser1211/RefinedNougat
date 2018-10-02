@@ -630,6 +630,7 @@
 		compatible = "samsung,exynos5430-ion";
 
 		contig-names = "common",
+			       "video_ext",
 			       "mfc_sh",
 			       "g2d_wfd",
 			       "video",
@@ -639,16 +640,19 @@
 			       "secdma";
 
 		contig = <0 0x400000 0x0>,
+		         <1 0x600000 0x0>,
 		         <2 0x100000 0x0>,
 		         <10 0x800000 0x0>,
 		         <11 0xA800000 0x0>,
 		         <9 0x100000 0x0>,
-		         <8 0x100000 0x0>,
-		         <12 0x100000 0x0>,
+		         <8 0x200000 0x0>,
+		         <12 0x200000 0x0>,
 		         <13 0x20000 0x0>;
 
-		contig-isolate_on_boot = <0>, <2>, <8>,
+		contig-isolate_on_boot = <0>, <1>, <2>, <8>,
 					  <9>, <10>, <11>, <12>, <13>;
+
+		secure = <11>, <9>, <8>, <1>;
 
 		ion_noncontig_heap {
 			id-type = <0 0>;
