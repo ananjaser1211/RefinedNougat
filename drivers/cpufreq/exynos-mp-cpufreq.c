@@ -48,28 +48,27 @@
 
 #ifdef CONFIG_SOC_EXYNOS5422_REV_0
 #define POWER_COEFF_15P		57 /* percore param */
-#define POWER_COEFF_7P		11 /* percore  param */
+#define POWER_COEFF_7P		11 /* percore param */
 #endif
 
 #ifdef CONFIG_SOC_EXYNOS5430
 #define POWER_COEFF_15P		48 /* percore param */
-#define POWER_COEFF_7P		9 /* percore  param */
+#define POWER_COEFF_7P		9  /* percore param */
 #endif
 
 #ifdef CONFIG_SOC_EXYNOS5433
 #define POWER_COEFF_15P		55 /* percore param */
-#define POWER_COEFF_7P		13 /* percore  param */
+#define POWER_COEFF_7P		13 /* percore param */
 #endif
 
-static unsigned int KFC_MIN_FREQ = 200000;
-static unsigned int KFC_MAX_FREQ = 1400000;
-static unsigned int CPU_MIN_FREQ = 200000;
-static unsigned int CPU_MAX_FREQ = 2100000;
+static unsigned int KFC_MIN_FREQ = 400000;
+static unsigned int KFC_MAX_FREQ = 1300000;
+static unsigned int CPU_MIN_FREQ = 700000;
+static unsigned int CPU_MAX_FREQ = 1900000;
 module_param_named(kfc_min_freq, KFC_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(kfc_max_freq, KFC_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(cpu_min_freq, CPU_MIN_FREQ, uint, S_IWUSR | S_IRUGO);
 module_param_named(cpu_max_freq, CPU_MAX_FREQ, uint, S_IWUSR | S_IRUGO);
- 
 
 #define VOLT_RANGE_STEP		25000
 
@@ -993,11 +992,7 @@ static int exynos_cpufreq_pm_notifier(struct notifier_block *notifier,
 
 		volt = max(get_boot_volt(CA15),
 				get_freq_volt(CA15, freqCA15));
-		if ( volt <= 0) {
-			printk("oops, strange voltage CA15 -> boot volt:%d, get_freq_volt:%d, freqCA15:%d \n",
-				get_boot_volt(CA15), get_freq_volt(CA15, freqCA15), freqCA15);
-			BUG_ON(volt <= 0);
-		}
+		BUG_ON(volt <= 0);
 		volt = get_limit_voltage(volt);
 
 		set_abb_first_than_volt = false;
@@ -1162,8 +1157,8 @@ static int exynos_cpufreq_cpu_init(struct cpufreq_policy *policy)
 	ret = cpufreq_frequency_table_cpuinfo(policy, exynos_info[cur]->freq_table);
 	
 	if (!ret) {
-        policy->min = cur == CA15 ? CPU_MIN_FREQ : KFC_MIN_FREQ;
-        policy->max = cur == CA15 ? CPU_MAX_FREQ : KFC_MAX_FREQ;
+		policy->min = cur == CA15 ? CPU_MIN_FREQ : KFC_MIN_FREQ;
+		policy->max = cur == CA15 ? CPU_MAX_FREQ : KFC_MAX_FREQ;
 	}
 
 	return ret;
@@ -1377,7 +1372,6 @@ static ssize_t store_cpufreq_max_limit(struct kobject *kobj, struct attribute *a
 }
 #endif
 
-
 static size_t get_freq_table_size(struct cpufreq_frequency_table *freq_table)
 {
 	size_t tbl_sz = 0;
@@ -1390,12 +1384,12 @@ static size_t get_freq_table_size(struct cpufreq_frequency_table *freq_table)
 }
 
 #ifdef CONFIG_SOC_EXYNOS5433
-#define KFC_MAX_VOLT 1375000
-#define EGL_MAX_VOLT 1375000
+#define KFC_MAX_VOLT 1400000
+#define EGL_MAX_VOLT 1350000
 #else
 #warning "Please define core maximum voltages for current SoC."
-#define KFC_MAX_VOLT 1300000
-#define EGL_MAX_VOLT 1375000
+#define KFC_MAX_VOLT 1350000
+#define EGL_MAX_VOLT 1350000
 #endif
 
 static ssize_t show_volt_table(struct kobject *kobj,
@@ -1467,7 +1461,9 @@ static ssize_t store_volt_table(struct kobject *kobj, struct attribute *attr,
 		}
 	}
 
+#ifdef CONFIG_CPU_THERMAL_IPA
 	ipa_update();
+#endif
 
 	mutex_unlock(&cpufreq_lock);
 

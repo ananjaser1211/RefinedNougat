@@ -130,30 +130,30 @@ static struct apll_freq exynos5433_apll_freq_CA15[] = {
  * ASV group voltage table
  */
 static const unsigned int asv_voltage_5433_CA15[CPUFREQ_LEVEL_END_CA15] = {
-	1350000,	/* L0  2500 */
-	1350000,	/* L1  2400 */
-	1350000,	/* L2  2300 */
-	1350000,	/* L3  2200 */
-	1350000,	/* L4  2100 */
-	1312500,	/* L5  2000 */
-	1262500,	/* L6  1900 */
-	1212500,	/* L7  1800 */
-	1175000,	/* L8  1700 */
-	1137500,	/* L9  1600 */
-	1112500,	/* L10 1500 */
-	1087500,	/* L11 1400 */
-	1062500,	/* L12 1300 */
-	1037500,	/* L13 1200 */
-	1012500,	/* L14 1100 */
-	 975000,	/* L15 1000 */
-	 937500,	/* L16  900 */
-	 912500,	/* L17  800 */
-	 912500,	/* L18  700 */
-	 900000,	/* L19  600 */
-	 900000,	/* L20  500 */
-	 900000,	/* L21  400 */
-	 900000,	/* L22  300 */
-	 900000,	/* L23  200 */
+	1325000,	/* L0  2500 */
+	1325000,	/* L1  2400 */
+	1325000,	/* L2  2300 */
+	1325000,	/* L3  2200 */
+	1325000,	/* L4  2100 */
+	1287500,	/* L5  2000 */
+	1237500,	/* L6  1900 */
+	1187500,	/* L7  1800 */
+	1150000,	/* L8  1700 */
+	1112500,	/* L9  1600 */
+	1087500,	/* L10 1500 */
+	1062500,	/* L11 1400 */
+	1037500,	/* L12 1300 */
+	1012500,	/* L13 1200 */
+	 987500,	/* L14 1100 */
+	 950000,	/* L15 1000 */
+	 912500,	/* L16  900 */
+	 887500,	/* L17  800 */
+	 887500,	/* L18  700 */
+	 875000,	/* L19  600 */
+	 875000,	/* L20  500 */
+	 875000,	/* L21  400 */
+	 875000,	/* L22  300 */
+	 875000,	/* L23  200 */
 };
 
 /* Minimum memory throughput in megabytes per second */
@@ -404,16 +404,16 @@ static void __init set_volt_table_CA15(void)
 		max_support_idx_CA15 = L7;	/* 1.8 GHz */
 		break;
 	default :
-		max_support_idx_CA15 = L6;	/* 1.9 GHz */
+		max_support_idx_CA15 = L4;	/* 2.1 GHz */
 	}
 
 	if (is_max_limit_sample() == 1)
-		max_support_idx_CA15 = L6;      /* 1.9 GHz */
+		max_support_idx_CA15 = L8;      /* 1.7 GHz */
 #else
 	max_support_idx_CA15 = L13;	/* 1.2 GHz */
 #endif
 
-	min_support_idx_CA15 = L23;	/* 200 MHz */
+	min_support_idx_CA15 = L21;	/* 400 MHz */
 
 	pr_info("CPUFREQ of CA15 max_freq : L%d %u khz\n", max_support_idx_CA15,
 		exynos5433_freq_table_CA15[max_support_idx_CA15].frequency);
