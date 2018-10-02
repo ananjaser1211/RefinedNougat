@@ -94,14 +94,22 @@
 #define WINTYPE_WHITE		'2'
 #define WHITEWINDOW_HI_THRESHOLD		720
 #define WHITEWINDOW_LOW_THRESHOLD		590
+#if defined(CONFIG_MACH_MELIUS_USC) || defined(CONFIG_MACH_MELIUS_SPR)
+#define BLACKWINDOW_HI_THRESHOLD		750
+#define BLACKWINDOW_LOW_THRESHOLD		520
+#else
 #define BLACKWINDOW_HI_THRESHOLD		650
 #define BLACKWINDOW_LOW_THRESHOLD		520
 #endif
-
+#endif
 
 struct taos_platform_data {
 	int als_int;
 	u32 als_int_flags;
+	int enable;
+	void (*power)(bool);
+	int (*light_adc_value)(void);
+	void (*led_on)(bool);
 	int prox_thresh_hi;
 	int prox_thresh_low;
 	int prox_th_hi_cal;
