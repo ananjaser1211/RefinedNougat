@@ -80,7 +80,8 @@
 #define CNTL_ALSPON_ENBL		0x03
 #define CNTL_INTALSPON_ENBL		0x13
 #define CNTL_PROXPON_ENBL		0x0F
-#define CNTL_INTPROXPON_ENBL		0x2F
+#define CNTL_INTPROXPON_ENBL	0x2F
+#define CNTL_ALS_ONLY_ENBL		0x0B
 
 /* TMD3782 status reg masks */
 #define STA_ADCVALID			0x01

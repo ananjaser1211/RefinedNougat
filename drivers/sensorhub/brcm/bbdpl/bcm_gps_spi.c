@@ -1827,6 +1827,7 @@ static struct spi_driver	bcm4773_spi_driver=
 	{
 		.name		= "ssp",
 		.owner		= THIS_MODULE,
+		.suppress_bind_attrs		= true,
 #ifdef CONFIG_OF
 		.of_match_table = ssp_match_table
 #endif
