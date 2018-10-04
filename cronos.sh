@@ -25,7 +25,7 @@ CR_AIK=$CR_DIR/Helios/AIK-Linux
 CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Variables
-CR_VERSION=V1.5
+CR_VERSION=V2.0
 CR_NAME=Helios_Kernel
 CR_JOBS=9
 CR_ANDROID=7
