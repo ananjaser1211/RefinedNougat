@@ -120,11 +120,11 @@ static void forbid_cp_sleep(struct mem_link_device *mld, int flag)
 {
 	struct modem_link_pm *pm = &mld->link_dev.pm;
 
-	if (atomic_read(&pm->ref_cnt) >= 1)
-		return;
-
 	atomic_set(&pm->ref_cnt, atomic_read(&pm->ref_cnt) | flag);
 	mif_debug("ref_cnt %d\n", atomic_read(&pm->ref_cnt));
+
+	if (atomic_read(&pm->ref_cnt) > 1)
+		return;
 
 	if (pm->request_hold)
 		pm->request_hold(pm);
@@ -319,11 +319,12 @@ static void release_cp_wakeup(struct work_struct *ws)
 
 	mld = container_of(ws, struct mem_link_device, cp_sleep_dwork.work);
 
-	spin_lock_irqsave(&mld->pm_lock, flags);
 	if (work_pending(&mld->cp_sleep_dwork.work))
 		cancel_delayed_work(&mld->cp_sleep_dwork);
 
+	spin_lock_irqsave(&mld->pm_lock, flags);
 	i = atomic_read(&mld->ref_cnt);
+	spin_unlock_irqrestore(&mld->pm_lock, flags);
 	if (i > 0)
 		goto reschedule;
 
@@ -331,7 +332,6 @@ static void release_cp_wakeup(struct work_struct *ws)
 		gpio_set_value(mld->gpio_cp_wakeup, 0);
 		gpio_set_value(mld->gpio_ap_status, 0);
 	}
-	spin_unlock_irqrestore(&mld->pm_lock, flags);
 
 #if 1
 	print_pm_status(mld);
@@ -340,7 +340,6 @@ static void release_cp_wakeup(struct work_struct *ws)
 	return;
 
 reschedule:
-	spin_unlock_irqrestore(&mld->pm_lock, flags);
 	queue_delayed_work(system_nrt_wq, &mld->cp_sleep_dwork,
 			   msecs_to_jiffies(sleep_timeout));
 }

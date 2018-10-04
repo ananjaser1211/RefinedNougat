@@ -520,6 +520,7 @@ static void run_pm_fsm(struct modem_link_pm *pm, enum pm_event event)
 			n_state = PM_STATE_ACTIVE;
 			cancel_cp_free(pm);
 			assert_ap2cp_wakeup(pm);
+			schedule_cp_free(pm);
 		} else if (event == PM_EVENT_CP_HOLD_TIMEOUT) {
 			/*
 			It is not guaranteed for cancel_cp_free() to succeed

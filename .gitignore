@@ -7037,5 +7037,9 @@ drivers/cpufreq/cpufreq_ondemand.o
 drivers/cpufreq/cpufreq_powersave.o
 drivers/cpufreq/cpufreq_smartass2.o
 drivers/cpufreq/cpufreq_zzmoove.o
-
+cc1
+*.log
+net/bluetooth/hci_sysfs.o.EliteDungeon.24043.tNctuF
+net/core/scm.o.EliteDungeon.24053.D3bOWD
+net/core/stream.o.EliteDungeon.24045.xrcGHF
 

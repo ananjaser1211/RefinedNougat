@@ -131,7 +131,7 @@ void tx_iosm_message(struct mem_link_device *mld, u8 id, u32 *args)
 	struct iosm_msg_area *base;
 	struct iosm_msg_area_head *hdr;
 	struct iosm_msg *msg;
-	int space, retry_cnt = 500;
+	int space;
 	struct link_device *ld = &mld->link_dev;
 	struct modem_ctl *mc = ld->mc;
 
@@ -169,32 +169,15 @@ void tx_iosm_message(struct mem_link_device *mld, u8 id, u32 *args)
 
 	mutex_unlock(&iosm_mtx);
 
-#ifndef CONFIG_SEC_MODEM_XMM7260_CAT6
-	if (atomic_read(&mld->cp_boot_done)) {
-#endif
-		/* As of now, tx path of iosm message should always guarantee
-		 * process context. We don't have to care rx path because cp
-		 * might try to mount lli i/f before sending data. */
-		do {
-			if (retry_cnt%100 == 0 && cp_online(mc) && mld->forbid_cp_sleep)
-				mld->forbid_cp_sleep(mld, REFCNT_IOSM);
-			
-			if (--retry_cnt == 0) {
-#ifdef CONFIG_SEC_MODEM_XMM7260_CAT6
-				modemctl_notify_event(MDM_EVENT_CP_FORCE_CRASH);
-#else
-				modemctl_notify_event(MDM_CRASH_BY_IOSM);
-#endif
-				return;
-			}
-			usleep_range(10000, 11000);
-		} while (!mld->link_active(mld));
-#ifndef CONFIG_SEC_MODEM_XMM7260_CAT6
+	if (cp_online(mc) && mld->forbid_cp_sleep_wait) {
+		if (mld->forbid_cp_sleep_wait(mld, REFCNT_IOSM)) {
+			send_ipc_irq(mld, mask2int(MASK_CMD_VALID));
+			mif_info("sent msg %s\n", tx_iosm_str[msg->msg_id]);
+		} else {
+			mif_err("failed to send iosm msg(%s)\n",
+				tx_iosm_str[msg->msg_id]);
+		}
 	}
-#endif
-
-	send_ipc_irq(mld, mask2int(MASK_CMD_VALID));
-	mif_info("sent msg %s\n", tx_iosm_str[msg->msg_id]);
 
 	if (cp_online(mc) && mld->permit_cp_sleep)
 		mld->permit_cp_sleep(mld, REFCNT_IOSM);

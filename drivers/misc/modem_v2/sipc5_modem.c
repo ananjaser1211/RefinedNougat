@@ -522,7 +522,6 @@ static struct platform_driver modem_driver = {
 	.driver = {
 		.name = "mif_sipc5",
 		.pm   = &modem_pm_ops,
-		.suppress_bind_attrs = true,
 #ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(sec_modem_match),
 #endif
