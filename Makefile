@@ -195,7 +195,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 
 ARCH		?=arm
-CROSS_COMPILE	?=~/Android/Toolchains/gcc-linaro-6.1.1-arm-eabi/bin/arm-eabi-
+CROSS_COMPILE	?=~/Android/Toolchains/gcc-linaro-6.4.1-arm-eabi/bin/arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -628,8 +628,11 @@ KBUILD_CFLAGS 	+= $(call cc-disable-warning,maybe-uninitialized,) \
 		   $(call cc-disable-warning,unused-variable,) \
 		   $(call cc-disable-warning,unused-function)
 
+# -Ofast optimization
+KBUILD_CFLAGS	+= -Ofast		   
+
 # Disallow introduction of unaligned stores
-KBUILD_CFLAGS	+= $(call cc-option,--param=store-merging-allow-unaligned=0)		   
+KBUILD_CFLAGS	+= $(call cc-option,--param=store-merging-allow-unaligned=0)	   
 
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
