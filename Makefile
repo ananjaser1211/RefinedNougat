@@ -618,6 +618,11 @@ KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
 # Disable maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 
+# Needed to fix RIL with GCC6+ on SHANON devices
+ifdef CONFIG_SHANNON_MODEM
+KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
+endif	
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
