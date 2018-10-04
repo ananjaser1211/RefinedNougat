@@ -105,8 +105,15 @@ on boot
 on property:sys.boot_completed=1
     start sysinit
 	start wakelock
+    start dispmode
 	
 service fake_knox /sbin/fake_knox.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service dispmode /sbin/dispmode.sh
     user root
     seclabel u:r:init:s0
     oneshot
