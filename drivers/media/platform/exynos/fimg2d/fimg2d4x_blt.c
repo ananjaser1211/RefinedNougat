@@ -38,6 +38,141 @@
 static int nbufs;
 static struct sysmmu_prefbuf prefbuf[MAX_PREFBUFS];
 
+#ifndef CONFIG_EXYNOS7_IOMMU
+#define G2D_MAX_VMA_MAPPING	12
+
+static int mapping_can_locked(unsigned long mapping, unsigned long mappings[], int cnt)
+{
+	int i;
+	if (!mapping)
+		return 0;
+
+	for (i = 0; i < cnt; i++) {
+		if ((mappings[i] & PAGE_MAPPING_FLAGS) == PAGE_MAPPING_ANON) {
+			if ((mapping & PAGE_MAPPING_FLAGS) == PAGE_MAPPING_ANON) {
+				struct anon_vma *anon = (struct anon_vma *)
+					(mapping & ~PAGE_MAPPING_FLAGS);
+				struct anon_vma *locked = (struct anon_vma *)
+					(mappings[i] & ~PAGE_MAPPING_FLAGS);
+				if (anon->root == locked->root)
+					return 0;
+			}
+		} else if (mappings[i] != 0) {
+			if (mappings[i] == mapping)
+				return 0;
+		}
+	}
+	return 1;
+}
+
+static int vma_lock_mapping_one(struct mm_struct *mm, unsigned long addr,
+				size_t len, unsigned long mappings[], int cnt)
+{
+	unsigned long end = addr + len;
+	struct vm_area_struct *vma;
+	struct page *page;
+
+	for (vma = find_vma(mm, addr);
+		vma && (vma->vm_start <= addr) && (addr < end);
+		addr += vma->vm_end - vma->vm_start, vma = vma->vm_next) {
+		struct anon_vma *anon;
+
+		page = follow_page(vma, addr, 0);
+		if (IS_ERR_OR_NULL(page) || !page->mapping)
+			continue;
+
+		anon = page_get_anon_vma(page);
+		if (!anon) {
+			struct address_space *mapping;
+			get_page(page);
+			mapping = page_mapping(page);
+			if (mapping_can_locked(
+				(unsigned long)mapping, mappings, cnt)) {
+				mutex_lock(&mapping->i_mmap_mutex);
+				mappings[cnt++] = (unsigned long)mapping;
+			}
+			put_page(page);
+		} else {
+			if (mapping_can_locked(
+					(unsigned long)anon | PAGE_MAPPING_ANON,
+					mappings, cnt)) {
+				anon_vma_lock_write(anon);
+				mappings[cnt++] = (unsigned long)page->mapping;
+			}
+			put_anon_vma(anon);
+		}
+
+		if (cnt == G2D_MAX_VMA_MAPPING)
+			break;
+	}
+
+	return cnt;
+}
+
+static void *vma_lock_mapping(struct mm_struct *mm,
+	       struct sysmmu_prefbuf area[], int num_area)
+{
+	unsigned long *mappings = NULL; /* array of G2D_MAX_VMA_MAPPINGS entries */
+	int cnt = 0;
+	int i;
+
+	mappings = (unsigned long *)kzalloc(
+				sizeof(unsigned long) * G2D_MAX_VMA_MAPPING,
+				GFP_KERNEL);
+	if (!mappings)
+		return NULL;
+
+	down_read(&mm->mmap_sem);
+	for (i = 0; i < num_area; i++) {
+		cnt = vma_lock_mapping_one(mm, area[i].base, area[i].size, mappings, cnt);
+		if (cnt == G2D_MAX_VMA_MAPPING) {
+			pr_err("%s: area crosses to many vmas\n", __func__);
+			break;
+		}
+	}
+
+	if (cnt == 0) {
+		kfree(mappings);
+		mappings = NULL;
+	}
+
+	up_read(&mm->mmap_sem);
+	return (void *)mappings;
+}
+
+static void vma_unlock_mapping(void *__mappings)
+{
+	int i;
+	unsigned long *mappings = __mappings;
+
+	if (!mappings)
+		return;
+
+	for (i = 0; i < G2D_MAX_VMA_MAPPING; i++) {
+		if (mappings[i]) {
+			if (mappings[i] & PAGE_MAPPING_ANON) {
+				anon_vma_unlock_write(
+					(struct anon_vma *)(mappings[i] &
+							~PAGE_MAPPING_FLAGS));
+			} else {
+				struct address_space *mapping = (void *)mappings[i];
+				mutex_unlock(&mapping->i_mmap_mutex);
+			}
+		}
+	}
+
+	kfree(mappings);
+}
+#else
+static void *vma_lock_mapping(struct mm_struct *mm,
+	       struct sysmmu_prefbuf area[], int num_area)
+{
+	return NULL;
+}
+
+#define vma_unlock_mapping(mapping) do { } while (0)
+#endif
+
 #ifdef CONFIG_PM_RUNTIME
 static int fimg2d4x_get_clk_cnt(struct clk *clk)
 {
@@ -45,6 +180,7 @@ static int fimg2d4x_get_clk_cnt(struct clk *clk)
 }
 #endif
 
+#ifdef CONFIG_EXYNOS7_IOMMU
 static void fimg2d4x_cleanup_pgtable(struct fimg2d_control *ctrl,
 					struct fimg2d_bltcmd *cmd,
 					enum image_object idx,
@@ -62,7 +198,9 @@ static void fimg2d4x_cleanup_pgtable(struct fimg2d_control *ctrl,
 				cmd->dma[idx].plane2.size);
 	}
 }
-
+#else
+#define fimg2d4x_cleanup_pgtable(ctrl, cmd, idx, plane2)	do { } while (0)
+#endif
 static int fimg2d4x_blit_wait(struct fimg2d_control *ctrl,
 		struct fimg2d_bltcmd *cmd)
 {
@@ -152,6 +290,8 @@ int fimg2d4x_bitblt(struct fimg2d_control *ctrl)
 			goto fail_n_del;
 		}
 
+		ctx->vma_lock = vma_lock_mapping(ctx->mm, prefbuf, MAX_IMAGES - 1);
+
 		if (fimg2d_check_pgd(ctx->mm, cmd)) {
 			ret = -EFAULT;
 			goto fail_n_unmap;
@@ -167,11 +307,20 @@ int fimg2d4x_bitblt(struct fimg2d_control *ctrl)
 				goto fail_n_unmap;
 			}
 			pgd = (unsigned long *)ctx->mm->pgd;
+#ifdef CONFIG_EXYNOS7_IOMMU
 			if (iovmm_activate(ctrl->dev)) {
 				fimg2d_err("failed to iovmm activate\n");
 				ret = -EPERM;
 				goto fail_n_unmap;
 			}
+#else
+			if (exynos_sysmmu_enable(ctrl->dev,
+					(unsigned long)virt_to_phys(pgd))) {
+				fimg2d_err("failed to sysmme enable\n");
+				ret = -EPERM;
+				goto fail_n_unmap;
+			}
+#endif
 			fimg2d_debug("%s : sysmmu enable: pgd %p ctx %p seq_no(%u)\n",
 				__func__, pgd, ctx, cmd->blt.seq_no);
 
@@ -188,8 +337,13 @@ int fimg2d4x_bitblt(struct fimg2d_control *ctrl)
 		ret = fimg2d4x_blit_wait(ctrl, cmd);
 		perf_end(cmd, PERF_BLIT);
 
+#ifdef CONFIG_EXYNOS7_IOMMU
 		if (addr_type == ADDR_USER || addr_type == ADDR_USER_CONTIG)
 			iovmm_deactivate(ctrl->dev);
+#else
+		if (addr_type == ADDR_USER || addr_type == ADDR_USER_CONTIG)
+			exynos_sysmmu_disable(ctrl->dev);
+#endif
 
 fail_n_unmap:
 		perf_start(cmd, PERF_UNMAP);
@@ -201,6 +355,7 @@ fail_n_unmap:
 		}
 		perf_end(cmd, PERF_UNMAP);
 fail_n_del:
+		vma_unlock_mapping(ctx->vma_lock);
 		fimg2d_del_command(ctrl, cmd);
 	}
 
@@ -306,7 +461,9 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 	struct fimg2d_param *p;
 	struct fimg2d_image *src, *msk, *dst;
 	struct sysmmu_prefbuf *pbuf;
+#ifdef CONFIG_EXYNOS7_IOMMU
 	int ret;
+#endif
 
 	fimg2d_debug("ctx %p seq_no(%u)\n", cmd->ctx, cmd->blt.seq_no);
 
@@ -378,6 +535,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 			pbuf++;
 		}
 
+#ifdef CONFIG_EXYNOS7_IOMMU
 		ret = exynos_sysmmu_map_user_pages(
 				ctrl->dev, cmd->ctx->mm,
 				cmd->dma[ISRC].base.addr,
@@ -398,6 +556,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 				return ret;
 			}
 		}
+#endif
 	}
 
 	/* msk */
@@ -416,6 +575,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 		nbufs++;
 		pbuf++;
 
+#ifdef CONFIG_EXYNOS7_IOMMU
 		ret = exynos_sysmmu_map_user_pages(
 				ctrl->dev, cmd->ctx->mm,
 				cmd->dma[IMSK].base.addr,
@@ -425,6 +585,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 			fimg2d4x_cleanup_pgtable(ctrl, cmd, ISRC, true);
 			return ret;
 		}
+#endif
 	}
 
 	/* dst */
@@ -448,6 +609,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 			pbuf++;
 		}
 
+#ifdef CONFIG_EXYNOS7_IOMMU
 		ret = exynos_sysmmu_map_user_pages(
 				ctrl->dev, cmd->ctx->mm,
 				cmd->dma[IDST].base.addr,
@@ -472,6 +634,7 @@ static int fimg2d4x_configure(struct fimg2d_control *ctrl,
 				return ret;
 			}
 		}
+#endif
 	}
 
 	sysmmu_set_prefetch_buffer_by_region(ctrl->dev, prefbuf, nbufs);
