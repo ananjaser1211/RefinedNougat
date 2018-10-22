@@ -7042,4 +7042,10 @@ cc1
 net/bluetooth/hci_sysfs.o.EliteDungeon.24043.tNctuF
 net/core/scm.o.EliteDungeon.24053.D3bOWD
 net/core/stream.o.EliteDungeon.24045.xrcGHF
+arch/arm/lib/lib1funcs.o.EliteDungeon.24353.001lLP
+arch/arm/lib/lshrdi3.o.EliteDungeon.24361.hOTnlP
+drivers/devfreq/devfreq.o.EliteDungeon.24319.Xa4j5I
+drivers/video/exynos/panels/mdnie_lite_table_noble.h
+fs/ext4/xattr_user.o.EliteDungeon.24341.yIYjQO
+fs/f2fs/data.o.EliteDungeon.24366.yDLvmO
 

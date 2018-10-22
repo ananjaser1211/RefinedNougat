@@ -27,6 +27,7 @@
 #define IS_ACCESSIBILITY(idx)	(idx && idx < ACCESSIBILITY_MAX)
 #define IS_HBM(idx)				(idx && idx < HBM_MAX)
 #define IS_HMT(idx)				(idx && idx < HMT_MDNIE_MAX)
+#define IS_NIGHT_MODE(idx)		(idx && idx < NIGHT_MODE_MAX)
 
 #define SCENARIO_IS_VALID(idx)	(IS_DMB(idx) || IS_SCENARIO(idx))
 
@@ -81,6 +82,9 @@ static struct mdnie_table *mdnie_find_table(struct mdnie_info *mdnie)
 		goto exit;
 	} else if (IS_HMT(mdnie->hmt_mode)) {
 		table = mdnie->tune->hmt_table ? &mdnie->tune->hmt_table[mdnie->hmt_mode] : NULL;
+		goto exit;
+	} else if (IS_NIGHT_MODE(mdnie->night_mode)) {
+		table = mdnie->tune->night_table ? &mdnie->tune->night_table[mdnie->night_mode] : NULL;
 		goto exit;
 	} else if (IS_HBM(mdnie->hbm)) {
 		if ((mdnie->scenario == BROWSER_MODE) || (mdnie->scenario == EBOOK_MODE))
@@ -597,6 +601,59 @@ static ssize_t sensorRGB_store(struct device *dev,
 	return count;
 }
 
+static ssize_t night_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct mdnie_info *mdnie = dev_get_drvdata(dev);
+
+	return sprintf(buf, "%d %d\n", mdnie->night_mode, mdnie->night_mode_level);
+}
+
+static ssize_t night_mode_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct mdnie_info *mdnie = dev_get_drvdata(dev);
+	unsigned int enable, level, base_index;
+	int i;
+	int ret;
+	mdnie_t *wbuf;
+	struct mdnie_scr_info *scr_info = mdnie->tune->scr_info;
+
+	ret = sscanf(buf, "%8d %8d", &enable, &level);
+	if (ret < 0)
+		return ret;
+
+	dev_info(dev, "%s: %d, %d\n", __func__, enable, level);
+
+	if (IS_ERR_OR_NULL(mdnie->tune->night_table) || IS_ERR_OR_NULL(mdnie->tune->night_info))
+		return count;
+
+	if (enable >= NIGHT_MODE_MAX)
+		return -EINVAL;
+
+	if (level >= mdnie->tune->night_info->max_h)
+		return -EINVAL;
+
+	mutex_lock(&mdnie->lock);
+
+	if (enable) {
+		wbuf = &mdnie->tune->night_table[enable].seq[scr_info->index].cmd[scr_info->color_blind];
+		base_index = mdnie->tune->night_info->max_w * level;
+		for (i = 0; i < mdnie->tune->night_info->max_w; i++) {
+			wbuf[i] = mdnie->tune->night_mode_table[base_index + i];
+		}
+	}
+
+	mdnie->night_mode = enable;
+	mdnie->night_mode_level = level;
+
+	mutex_unlock(&mdnie->lock);
+
+	mdnie_update(mdnie);
+
+	return count;
+}
+
 #ifdef CONFIG_LCD_HMT
 static ssize_t hmtColorTemp_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -639,6 +696,7 @@ static struct device_attribute mdnie_attributes[] = {
 	__ATTR(lux, 0000, lux_show, lux_store),
 	__ATTR(mdnie, 0444, mdnie_show, NULL),
 	__ATTR(sensorRGB, 0664, sensorRGB_show, sensorRGB_store),
+	__ATTR(night_mode, 0664, night_mode_show, night_mode_store),
 #ifdef CONFIG_LCD_HMT
 	__ATTR(hmt_color_temperature, 0664, hmtColorTemp_show, hmtColorTemp_store),
 #endif

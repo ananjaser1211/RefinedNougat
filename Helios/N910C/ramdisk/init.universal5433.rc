@@ -457,6 +457,7 @@ on fs
     chown system system /sys/class/lcd/panel/hmt_on
     chown system system /sys/class/lcd/panel/hmt_bright
     chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
+    chown system system /sys/class/mdnie/mdnie/night_mode    
 
 # Permissions for TouchScreen
     chown system radio /sys/class/sec/tsp/cmd
