@@ -7090,3 +7090,4 @@ drivers/w1/.w1.o.d
 drivers/w1/.w1_int.o.d
 drivers/w1/w1_int.o.EliteDungeon.31442.zxlsxT
 arch/arm/include/generated/asm/*
+.tmpconfig.*
