@@ -62,6 +62,8 @@ on init
     chown system radio /dev/socket/msockets
 
 on post-fs-data
+    mkdir /data/media 0770 media_rw media_rw
+
     setprop vold.post_fs_data_done 1
 
     # Permissions Camera
@@ -509,7 +511,10 @@ on fs
     chown system radio /sys/class/audio/earjack/select_jack
     chown system radio /sys/class/audio/earjack/key_state
     chown system radio /sys/class/audio/earjack/state
+    chown system radio /sys/class/audio/earjack/mic_adc
     chown system radio /sys/class/dsm/max98504/dsm_log
+    mkdir /data/firmware 0770 media system
+    chown media system /data/firmware
 
 # Permissions for System LSI NFC
 # NFC : Permissions for NFC
@@ -782,6 +787,25 @@ on property:ro.debuggable=1
     write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
     write /sys/module/fiq_debugger/parameters/kgdb_enable 1
 
+# ITP mode enter/exit
+on property:ril.cbd.modechan=0
+    restart ril-daemon
+
+on property:ril.cbd.modechan=2
+    restart ril-daemon
+
+# AT Distributor for factory test
+service at_distributor /system/bin/at_distributor
+    class late_start
+    user root
+    group radio misc log
+
+# IPSec for VOLTE
+service ipsec-daemon /system/bin/IPSecService
+    class main
+    socket ipsec_socket stream 660 system system
+    user system
+    group system net_raw inet net_admin
 
 # LPM
 on property:ro.bootmode=charger
