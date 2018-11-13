@@ -89,6 +89,10 @@ on post-fs-data
     # Permissions for Camera to flush cache buffers
     chown system system /sys/devices/virtual/sec/sec_misc/drop_caches
 
+# Permissions for ION
+    chmod 0660 /sys/class/ion_cma/ion_video_ext/isolated
+    chown system system /sys/class/ion_cma/ion_video_ext/isolated
+
     #Private Mode
     mkdir /mnt/shell/privatemode 0700 system system
     mkdir /storage/Private 0000 system system
@@ -458,9 +462,6 @@ on fs
     chown system system /sys/class/lcd/panel/hmt_bright
     chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
 
-# LCD ALPM Mode
-    chown system system /sys/class/lcd/panel/alpm
-
 # Permissions for TouchScreen
     chown system radio /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/input/enabled
@@ -524,11 +525,16 @@ on fs
     chown system radio /sys/class/sec/sec_barcode_emul/barcode_ver_check
 
 # SENSORS
-# Fingerprint
+
+    # Fingerprint
     mkdir /dev/validity 0770 system system
     mkdir /data/validity 0770 system system
-# Fingerprint_sensor
+
+    # Fingerprint_sensor
     chown system radio /sys/class/fingerprint/fingerprint/type_check
+    chown system radio /sys/class/fingerprint/fingerprint/name
+    chown system radio /sys/class/fingerprint/fingerprint/vendor
+
 # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
@@ -665,6 +671,9 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     chown system system /sys/class/mdnie/mdnie/accessibility
     chown system system /sys/class/mdnie/mdnie/auto_brightness
     chown system system /sys/class/mdnie/mdnie/sensorRGB
+    chown system system /sys/class/mdnie/mdnie/whiteRGB
+    chown system system /sys/class/mdnie/mdnie/night_mode
+    chown system system /sys/class/mdnie/mdnie/mdnie_ldu
 
 # Copy DRM Key
     copy /system/app/wv.keys /factory/wv.keys
@@ -773,25 +782,6 @@ on property:ro.debuggable=1
     write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
     write /sys/module/fiq_debugger/parameters/kgdb_enable 1
 
-# ITP mode enter/exit
-on property:ril.cbd.modechan=0
-    restart ril-daemon
-
-on property:ril.cbd.modechan=2
-    restart ril-daemon
-
-# Modem Logging daemon
-service ML-daemon /system/bin/mlexe
-    class main
-    user root
-    group system radio inet net_raw
-
-# IPSec for VOLTE
-service ipsec-daemon /system/bin/IPSecService
-    class main
-    socket ipsec_socket stream 660 system system
-    user system
-    group system net_raw inet net_admin
 
 # LPM
 on property:ro.bootmode=charger
@@ -814,6 +804,18 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
 
 # SENSOR FRAMEWORK : starts fingerprintService
 service vcsFPService /system/bin/vcsFPService
+    class late_start		
+    user system		
+    group system
+
+# FINGERPRINT FRAMEWORK : starts fingerprintd		
+service fingerprintd /system/bin/fingerprintd
+    class late_start
+    user system
+    group system
+
+# faced
+service faced /system/bin/faced
     class late_start
     user system
     group system
@@ -877,9 +879,24 @@ service umount_service /system/bin/umount /preload
     disabled
     oneshot
 
+service fingerprintd /system/bin/fingerprintd
+    class late_start
+    user system
+    group input
+
+# SENSOR FRAMEWORK : starts fingerprintService
+service vcsFPService /system/bin/vcsFPService
+    class late_start
+    user system
+    group system
+
 on property:persist.sys.storage_preload=1
     mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev noatime wait ro
     setprop storage.preload.complete 1
 
 on property:persist.sys.storage_preload=0
     start umount_service
+
+# Reactivation lock
+service reactived /system/bin/reactived
+    class late_start

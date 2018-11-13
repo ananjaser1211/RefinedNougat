@@ -3,6 +3,7 @@
 # IMPORTANT: Do not create world writable files or directories.
 # This is a common source of Android security bugs.
 #
+
 on boot
 service ril-daemon /system/bin/rild
     class main

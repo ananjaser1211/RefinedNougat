@@ -15,7 +15,7 @@
 # Originally Coded by Tkkg1994 @GrifoDev, enhanced by BlackMesa @XDAdevelopers
 #
 
-LOGFILE=/data/Helios/initd.log
+LOGFILE=/data/.refined/initd.log
 
 log_print() {
   echo "$1"

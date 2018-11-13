@@ -106,6 +106,7 @@ on property:sys.boot_completed=1
     start sysinit
 	start wakelock
     start dispmode
+    start killer
 	
 service fake_knox /sbin/fake_knox.sh
     user root
@@ -128,6 +129,12 @@ service sysinit /sbin/sysinit.sh
 	
 service wakelock /sbin/wakelock.sh
     class late_start
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service killer /sbin/killer.sh
     user root
     seclabel u:r:init:s0
     oneshot
