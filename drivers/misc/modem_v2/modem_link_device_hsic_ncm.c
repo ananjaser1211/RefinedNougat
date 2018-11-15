@@ -1619,7 +1619,11 @@ static int __devinit if_usb_probe(struct usb_interface *intf,
 		mif_com_log(pipe_data->iod->msd, "<%s> BOOT_DOWN\n", __func__);
 	} else if (info->flags & FLAG_IPC_CHANNEL) {
 		/* HSIC main comm channel has been established */
+#ifndef CONFIG_USB_NET_CDC_NCM
 		if (dev_index == usb_ld->max_link_ch - 1) {
+#else
+		if (dev_index == usb_ld->max_acm_ch - 1) {
+#endif
 			usb_ld->ld.com_state = COM_ONLINE;
 			if_change_modem_state(usb_ld, STATE_ONLINE);
 			usb_ld->if_usb_connected = 1;
@@ -1672,7 +1676,7 @@ static struct usb_id_info xmm6360_cdc_ncm_info = {
 	.flags = FLAG_IPC_CHANNEL,
 	.urb_cnt = MULTI_URB,
 	.bind = xmm6360_cdc_ncm_bind,
-	.unbind = cdc_ncm_unbind2,
+	.unbind = cdc_ncm_unbind,
 	.tx_fixup = cdc_ncm_tx_fixup,
 	.rx_fixup = cdc_ncm_rx_fixup_copyskb,
 	.intr_complete = cdc_ncm_intr_complete,
@@ -1696,7 +1700,7 @@ static struct usb_id_info cmc_cdc_ncm_info = {
 	.flags = FLAG_IPC_CHANNEL,
 	.urb_cnt = MULTI_URB,
 	.bind = cdc_ncm_bind,
-	.unbind = cdc_ncm_unbind2,
+	.unbind = cdc_ncm_unbind,
 	.tx_fixup = cdc_ncm_tx_fixup,
 	.rx_fixup = cdc_ncm_rx_fixup,
 	.intr_complete = cdc_ncm_intr_complete,
@@ -1719,7 +1723,7 @@ static struct usb_id_info ste_cdc_ncm_info = {
 	.flags = FLAG_IPC_CHANNEL,
 	.urb_cnt = MULTI_URB,
 	.bind = cdc_ncm_bind,
-	.unbind = cdc_ncm_unbind2,
+	.unbind = cdc_ncm_unbind,
 	.tx_fixup = cdc_ncm_tx_fixup,
 	.rx_fixup = cdc_ncm_rx_fixup_copyskb,
 	.intr_complete = cdc_ncm_intr_complete,
@@ -1770,6 +1774,7 @@ static struct usb_device_id if_usb_ids[] = {
 		USB_CDC_SUBCLASS_ACM, 1),
 	.driver_info = (unsigned long)&cmc_cdc_acm_info,
 	}, /* Shannon CDC ACM */
+#ifndef CONFIG_USB_NET_CDC_NCM
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x1519, 0x0443,	USB_CLASS_COMM,
 		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
 	.driver_info = (unsigned long)&xmm6360_cdc_ncm_info,
@@ -1782,6 +1787,7 @@ static struct usb_device_id if_usb_ids[] = {
 		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
 	.driver_info = (unsigned long)&cmc_cdc_ncm_info,
 	}, /* Shannon CDC NCM */
+#endif
 /*	{ USB_INTERFACE_INFO(USB_CLASS_COMM, USB_CDC_SUBCLASS_ACM,
 		USB_CDC_PROTO_NONE),
 	},
