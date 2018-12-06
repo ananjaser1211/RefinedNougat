@@ -147,6 +147,24 @@ clear
 echo "----------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "----------------------------------------------"
+PS3='Please select your option (1-2): '
+menuvar=("Standart battery" "Zerolemon battery")
+select menuvar in "${menuvar[@]}"
+do
+  case $menuvar in
+	"Standart battery")
+            clear
+            cp drivers/battery/max77843_fuelgauge_ST.c drivers/battery/max77843_fuelgauge.c
+            break
+            ;;
+	"Zerolemon battery")
+            clear
+            cp drivers/battery/max77843_fuelgauge_ZL.c drivers/battery/max77843_fuelgauge.c
+            break
+            ;;
+        *) echo Invalid option.;;
+  esac
+done
 PS3='Please select your option (1-6): '
 menuvar=("SM-N910C-H" "SM-N910S-L-K" "SM-N910U" "SM-N915S" "SM-N916S" "Exit")
 select menuvar in "${menuvar[@]}"
