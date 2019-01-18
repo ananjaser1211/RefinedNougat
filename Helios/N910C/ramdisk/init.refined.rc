@@ -47,8 +47,6 @@ on boot
 
     mount debugfs /sys/kernel/debug /sys/kernel/debug
 
-    setprop ro.radio.noril yes
-
     # Set up kernel tracing, but disable it by default
     chmod 0222 /sys/kernel/debug/tracing/trace_marker
     write /sys/kernel/debug/tracing/tracing_on 0
@@ -138,21 +136,7 @@ service killer /sbin/killer.sh
     user root
     seclabel u:r:init:s0
     oneshot
-    disabled	
-	
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
-    class main
-    user system
-    group input
-	seclabel u:r:sensorhubservice:s0
-	
-# SensorHub (Location Hub)
-service lhd /system/bin/lhd /system/etc/lhd.conf
-    class main
-    user gps
-    group system inet net_raw
-    ioprio be 0	
+    disabled
 	
 # SensorHub
     chown system radio /sys/class/sensors/ssp_sensor/enable

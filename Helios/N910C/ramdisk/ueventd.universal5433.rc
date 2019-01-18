@@ -151,3 +151,28 @@
 # Secure MEM driver
 /dev/s5p-smem             0660   system     mediadrm
 
+# Governor
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/timer_slack          0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/timer_rate           0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/min_sample_time      0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/hispeed_freq         0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/target_loads         0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/go_hispeed_load      0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/above_hispeed_delay  0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/boost                0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/boostpulse           0200 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/input_boost          0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/boostpulse_duration  0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/io_is_busy           0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/cpu_util             0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/enforced_mode        0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/mode                 0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_enter_load     0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_enter_time     0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_exit_load      0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_exit_time      0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/param_index          0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_enter_load    0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_enter_time    0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_exit_load     0660 system system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_exit_time     0660 system system

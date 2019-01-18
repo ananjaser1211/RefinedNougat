@@ -381,6 +381,37 @@ on boot
     chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_load
     chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_time
     chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_time
+	
+    # Device specific power settings for interactive governor
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_enter_load 800
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_enter_load 200
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/param_index 0
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack 20000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 40000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 900000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 85
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads 75
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 19000
+
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_load 360
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_time 99000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_load 240
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_time 299000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_load 95
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_time 199000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_load 60
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_time 99000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/param_index 0
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate 20000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack 20000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1000000
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 89
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "80 1000000:81 1400000:87 1700000:90"
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "59000 1200000:119000 1700000:19000"
+
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse 400000	
 
     # Assume HMP uses shared cpufreq policy for big CPUs
     chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
@@ -515,6 +546,16 @@ on fs
     chown system radio /sys/class/dsm/max98504/dsm_log
     mkdir /data/firmware 0770 media system
     chown media system /data/firmware
+	
+    # mobicore
+    mkdir /data/app/mcRegistry 0775 system system
+    mkdir /system/app/mcRegistry/TbStorage 0775 system system
+    chmod 0700 /dev/mobicore
+    chmod 0666 /dev/mobicore-user
+    chmod 0660 /dev/s5p-smem
+    chown system system /dev/mobicore
+    chown radio system /dev/mobicore-user
+    chown system mediadrm /dev/s5p-smem	
 
 # Permissions for System LSI NFC
 # NFC : Permissions for NFC
@@ -530,16 +571,14 @@ on fs
     chown system radio /sys/class/sec/sec_barcode_emul/barcode_ver_check
 
 # SENSORS
-
-    # Fingerprint
+# Fingerprint
     mkdir /dev/validity 0770 system system
+# Fingerprint_sensor
     mkdir /data/validity 0770 system system
-
-    # Fingerprint_sensor
     chown system radio /sys/class/fingerprint/fingerprint/type_check
     chown system radio /sys/class/fingerprint/fingerprint/name
     chown system radio /sys/class/fingerprint/fingerprint/vendor
-
+    chown system radio /sys/class/fingerprint/fingerprint/adm
 # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
@@ -665,12 +704,13 @@ on fs
 # SensorHub (Location Hub)
 service lhd /system/bin/lhd /system/etc/lhd.conf
     class main
-    user root
+    user gps
     group system inet net_raw
     ioprio be 0
-    disabled
 
 # Permissions for MDNIE
+    chmod 0755 /sys/class/mdnie/mdnie/mode
+    chmod 0755 /sys/class/mdnie/mdnie/scenario
     chown system media_rw /sys/class/mdnie/mdnie/mode
     chown system media_rw /sys/class/mdnie/mdnie/scenario
     chown system system /sys/class/mdnie/mdnie/accessibility
@@ -807,6 +847,12 @@ service ipsec-daemon /system/bin/IPSecService
     user system
     group system net_raw inet net_admin
 
+# SENSOR FRAMEWORK : starts fingerprintService
+service vcsFPService /system/bin/vcsFPService
+    class late_start
+    user system
+    group system
+
 # LPM
 on property:ro.bootmode=charger
     mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM /system wait ro
@@ -854,27 +900,6 @@ service cs_service /system/bin/cs
 on property:sys.mobicoredaemon.enable=true
     start cs_service
     write /proc/iccc_ready 1
-
-# Secure Storage startup
-service secure_storage /system/bin/secure_storage_daemon
-    class core
-    user system
-    group system
-    disabled
-
-on property:ro.securestorage.support=true
-    mkdir /dev/.secure_storage
-    chmod 0711 /dev/.secure_storage
-    chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
-    start secure_storage
-
-on property:ro.securestorage.knox=true
-    mkdir /dev/.secure_storage
-    chmod 0711 /dev/.secure_storage
-    chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
-    start secure_storage
 
 # for ethernet
 service dhcpcd_eth0 /system/bin/dhcpcd -ABKL

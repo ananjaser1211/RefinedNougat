@@ -38,12 +38,6 @@ on init
 
     ffu
 
-# [ SEC_SELINUX_PORTING_COMMON
-    # for audit message
-    chown system system /proc/avc_msg
-    chmod 0660 /proc/avc_msg
-# ] SEC_SELINUX_PORTING_COMMON
-
     # Mix device-specific information into the entropy pool
     copy /proc/cmdline /dev/urandom
     copy /default.prop /dev/urandom
@@ -229,20 +223,20 @@ on init
     # this ensures that the cpusets are present and usable, but the device's
     # init.rc must actually set the correct cpus
     mkdir /dev/cpuset/foreground
-    write /dev/cpuset/foreground/cpus 0
+    write /dev/cpuset/foreground/cpus 0-2,4-7
     write /dev/cpuset/foreground/mems 0
     mkdir /dev/cpuset/foreground/boost
     write /dev/cpuset/foreground/boost/cpus 0
     write /dev/cpuset/foreground/boost/mems 0
     mkdir /dev/cpuset/background
-    write /dev/cpuset/background/cpus 0
+    write /dev/cpuset/background/cpus 0-1
     write /dev/cpuset/background/mems 0
 
     # system-background is for system tasks that should only run on
     # little cores, not on bigs
     # to be used only by init, so don't change system-bg permissions
     mkdir /dev/cpuset/system-background
-    write /dev/cpuset/system-background/cpus 0
+    write /dev/cpuset/system-background/cpus 0-2
     write /dev/cpuset/system-background/mems 0
 
     # change permissions for all cpusets we'll touch at runtime
@@ -506,13 +500,17 @@ on post-fs-data
     # start debuggerd to make debugging early-boot crashes easier.
     start debuggerd
     start debuggerd64
+	
+	# mobicore
+    mkdir /data/app/mcRegistry 0775 system system
+    mkdir /data/app/mcRegistry/TbStorage 0700 system system
+    mkdir /efs/TEE  0770 radio system	
 
     # mobicore
-    # export MC_AUTH_TOKEN_PATH /efs
-    # mkdir /efs/TEE  0770 radio system
-	# chmod 0660 /dev/t-base-tui
-    # chown system system /dev/t-base-tui
-    start mobicore
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE  0770 radio system
+	  chmod 0660 /dev/t-base-tui
+    chown system system /dev/t-base-tui
 
     # Make sure we have the device encryption key.
     start vold
@@ -600,11 +598,6 @@ on post-fs-data
 	#MST-MFC Support
     chown system system /sys/class/mstldo/mst_drv/mfc
     chmod 0770 /sys/class/mstldo/mst_drv/mfc
-
-# [ SEC_SELINUX_PORTING_COMMON
-    mkdir /data/misc/audit 0775 audit system 
-
-# ] SEC_SELINUX_PORTING_COMMON
 
     # ATT CIQ
     mkdir /data/iq_archive 0771 system system
@@ -909,6 +902,23 @@ on boot
     chown radio system /sys/power/cpufreq_max_limit
     chmod 0664 /sys/power/cpufreq_max_limit
 
+    chown radio system /sys/devices/system/cpu/kernel_max
+    chmod 0664 /sys/devices/system/cpu/kernel_max
+
+    # Change permission for input booster
+    chown system radio /sys/class/input_booster/level
+    chown system radio /sys/class/input_booster/head
+    chown system radio /sys/class/input_booster/tail
+    chown system radio /sys/class/input_booster/touchkey/level
+    chown system radio /sys/class/input_booster/touchkey/freq
+    chown system radio /sys/class/input_booster/touchkey/time
+    chmod 0664 /sys/class/input_booster/level
+    chmod 0664 /sys/class/input_booster/head
+    chmod 0664 /sys/class/input_booster/tail
+    chmod 0664 /sys/class/input_booster/touchkey/level
+    chmod 0664 /sys/class/input_booster/touchkey/freq
+    chmod 0664 /sys/class/input_booster/touchkey/time
+
     # NFC_NXP
     setprop ro.nfc.port "I2C"
     chmod 0660 /dev/pn547
@@ -1150,9 +1160,14 @@ on boot
    chmod 0660 /sys/class/power_supply/battery/cisd_data
    chown system radio /sys/class/power_supply/battery/cisd_data_json
    chmod 0660 /sys/class/power_supply/battery/cisd_data_json
+   chown system system /efs/FactoryApp/cisd_fullcaprep_max
+   chmod 0640 /efs/FactoryApp/cisd_fullcaprep_max
+   chown system radio /sys/class/power_supply/battery/cisd_data_efs_path
+   chmod 0660 /sys/class/power_supply/battery/cisd_data_efs_path
    chown system system /efs/FactoryApp/cisd_data
    chmod 0640 /efs/FactoryApp/cisd_data
-
+   chown radio system /efs/Battery/batt_capacity_max
+   chmod 0664 /efs/Battery/batt_capacity_max
     # OTG Test
     chown system radio /sys/class/host_notify/usb_otg/booster
     chmod 0664 /sys/class/host_notify/usb_otg/booster
@@ -1311,6 +1326,10 @@ on charger
     chmod 0660 /sys/class/power_supply/battery/cisd_fullcaprep_max
     chown system radio /sys/class/power_supply/battery/cisd_data
     chmod 0660 /sys/class/power_supply/battery/cisd_data
+    chown system system /efs/FactoryApp/cisd_fullcaprep_max
+    chmod 0640 /efs/FactoryApp/cisd_fullcaprep_max
+    chown system radio /sys/class/power_supply/battery/cisd_data_efs_path
+    chmod 0660 /sys/class/power_supply/battery/cisd_data_efs_path
     chown system system /efs/FactoryApp/cisd_data
     chmod 0640 /efs/FactoryApp/cisd_data
     chown radio system /efs
@@ -1318,6 +1337,8 @@ on charger
     mkdir /efs/Battery 0775 radio system
     chown radio system /efs/Battery
     chmod 0775 /efs/Battery
+    chown radio system /efs/Battery/batt_capacity_max
+    chmod 0664 /efs/Battery/batt_capacity_max
     copy /system/vendor/firmware/battery_data.dat /efs/Battery/battery_data.dat
     chmod 0400 /efs/Battery/battery_data.dat
     write /sys/class/power_supply/battery/batt_update_data "/efs/Battery/battery_data.dat"
@@ -1544,15 +1565,13 @@ service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF0000000000000
     class main
     user root
     group system
-    oneshot
     
 # Sensorhub service
 service sensorhubservice /system/bin/sensorhubservice
     class main
-    user root
+    user system
     group input
-	seclabel u:r:sensorhubservice:s0
-    disabled
+    seclabel u:r:sensorhubservice:s0
 
 service flash_recovery /system/bin/install-recovery.sh
     class main
@@ -1684,6 +1703,10 @@ service preparefbe_ce /system/bin/preparefbe storage_ce
 service preparefbe_de /system/bin/preparefbe storage_de
     oneshot
     disabled
+	
+on property:sys.mobicoredaemon.enable=true
+    start cs_service
+    write /proc/iccc_ready 1  	
 
 service vpnclientd /system/bin/vpnclientd
     socket vpnclientd seqpacket 0600 system system

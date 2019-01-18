@@ -4,7 +4,6 @@
 # This is a common source of Android security bugs.
 #
 
-on boot
 service ril-daemon /system/bin/rild
     class main
     socket rild stream 660 root radio
