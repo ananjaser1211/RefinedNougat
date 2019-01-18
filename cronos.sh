@@ -24,6 +24,7 @@ CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
 CR_KERNEL=$CR_DIR/arch/arm/boot/zImage
 CR_DTB=$CR_DIR/boot.img-dtb
+CR_RAMDISK_MAIN=$CR_DIR/Helios/Ramdisk
 # Kernel Variables
 CR_VERSION=V2.0
 CR_NAME=Helios_Kernel
@@ -133,7 +134,8 @@ PACK_BOOT_IMG()
 	echo "----------------------------------------------"
 	echo " "
 	echo "Building Boot.img for $CR_VARIANT"
-	cp -rf $CR_RAMDISK/* $CR_AIK
+	cp -rf $CR_RAMDISK_MAIN/* $CR_AIK
+	cp -rf $CR_RAMDISK_SUB/* $CR_AIK
 	mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
 	mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
 	$CR_AIK/repackimg.sh
@@ -177,7 +179,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910CH
             CR_CONFG=$CR_CONFG_N910CH
             CR_DTSFILES=$CR_DTSFILES_N910CH
-       	    CR_RAMDISK=$CR_RAMDISK_N910CH
+       	    CR_RAMDISK_SUB=$CR_RAMDISK_N910CH
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -198,7 +200,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910SLK
        	    CR_CONFG=$CR_CONFG_N910SLK
             CR_DTSFILES=$CR_DTSFILES_N910SLK
-       	    CR_RAMDISK=$CR_RAMDISK_N910SLK
+       	    CR_RAMDISK_SUB=$CR_RAMDISK_N910SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -219,7 +221,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910U
        	    CR_CONFG=$CR_CONFG_N910U
             CR_DTSFILES=$CR_DTSFILES_N910U
-       	    CR_RAMDISK=$CR_RAMDISK_N910U
+       	    CR_RAMDISK_SUB=$CR_RAMDISK_N910U
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -240,7 +242,7 @@ do
             CR_VARIANT=$CR_VARIANT_N915SLK
        	    CR_CONFG=$CR_CONFG_N915SLK
             CR_DTSFILES=$CR_DTSFILES_N915SLK
-       	    CR_RAMDISK=$CR_RAMDISK_N915SLK
+       	    CR_RAMDISK_SUB=$CR_RAMDISK_N915SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -261,7 +263,7 @@ do
             CR_VARIANT=$CR_VARIANT_N916SLK
        	    CR_CONFG=$CR_CONFG_N916SLK
             CR_DTSFILES=$CR_DTSFILES_N916SLK
-       	    CR_RAMDISK=$CR_RAMDISK_N916SLK
+       	    CR_RAMDISK_SUB=$CR_RAMDISK_N916SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
