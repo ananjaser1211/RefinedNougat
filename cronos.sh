@@ -18,7 +18,7 @@
 
 # Directory Contol
 CR_DIR=$(pwd)
-CR_TC=~/Android/Toolchains/gcc-linaro-6.1.1-arm-eabi/bin/arm-eabi-
+CR_TC=/home/elite_aj1211/Android/Toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-eabi/bin/arm-eabi-
 CR_DTS=arch/arm/boot/dts
 CR_OUT=$CR_DIR/Helios/out
 CR_AIK=$CR_DIR/Helios/AIK-Linux
@@ -177,7 +177,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910CH
             CR_CONFG=$CR_CONFG_N910CH
             CR_DTSFILES=$CR_DTSFILES_N910CH
-			CR_RAMDISK=$CR_RAMDISK_N910CH
+       	    CR_RAMDISK=$CR_RAMDISK_N910CH
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -198,7 +198,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910SLK
        	    CR_CONFG=$CR_CONFG_N910SLK
             CR_DTSFILES=$CR_DTSFILES_N910SLK
-			CR_RAMDISK=$CR_RAMDISK_N910SLK
+       	    CR_RAMDISK=$CR_RAMDISK_N910SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -219,7 +219,7 @@ do
             CR_VARIANT=$CR_VARIANT_N910U
        	    CR_CONFG=$CR_CONFG_N910U
             CR_DTSFILES=$CR_DTSFILES_N910U
-			CR_RAMDISK=$CR_RAMDISK_N910U
+       	    CR_RAMDISK=$CR_RAMDISK_N910U
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -240,7 +240,7 @@ do
             CR_VARIANT=$CR_VARIANT_N915SLK
        	    CR_CONFG=$CR_CONFG_N915SLK
             CR_DTSFILES=$CR_DTSFILES_N915SLK
-			CR_RAMDISK=$CR_RAMDISK_N915SLK
+       	    CR_RAMDISK=$CR_RAMDISK_N915SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
@@ -261,7 +261,7 @@ do
             CR_VARIANT=$CR_VARIANT_N916SLK
        	    CR_CONFG=$CR_CONFG_N916SLK
             CR_DTSFILES=$CR_DTSFILES_N916SLK
-			CR_RAMDISK=$CR_RAMDISK_N916SLK
+       	    CR_RAMDISK=$CR_RAMDISK_N916SLK
 	    BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
