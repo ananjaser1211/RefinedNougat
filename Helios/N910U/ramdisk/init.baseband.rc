@@ -18,18 +18,16 @@ on init
 
 on fs
 # MIF
-    chown radio radio /sys/devices/virtual/misc/multipdp/waketime
+    chown radio radio sys/devices/virtual/misc/multipdp/waketime
     chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
     chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state
 
-# CP Boot Daemon (CBD)
-service cpboot-daemon /sbin/cbd -d -t xmm72xx_lli -b l -m l -p 13
+start cpboot-daemon
+
+service cpboot-daemon /sbin/bin/cbd -d -t xmm72xx_lli -b l -m l -p 13
     class main
     user root
     group radio cache inet misc audio sdcard_r sdcard_rw log shell
-    seclabel u:r:cbd:s0
-on property:persist.sys.cpboot=disable
-    stop cpboot-daemon
 
 on property:ro.debug_level=0x494d
 	write /d/tracing/buffer_size_kb 1408
