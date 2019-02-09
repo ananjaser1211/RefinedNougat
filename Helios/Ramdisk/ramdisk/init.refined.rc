@@ -11,6 +11,7 @@ on early-init
 
 on boot
     start fake_knox
+    start dispmode
 
 #unify sysfs node for GPU
     chmod 0444 /sys/devices/platform/gpusysfs/gpu_clock
@@ -103,7 +104,6 @@ on boot
 on property:sys.boot_completed=1
     start sysinit
 	start wakelock
-    start dispmode
     start killer
 	
 service fake_knox /sbin/fake_knox.sh

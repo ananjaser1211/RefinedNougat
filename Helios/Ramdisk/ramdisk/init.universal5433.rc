@@ -490,6 +490,7 @@ on fs
     chown system system /sys/class/lcd/panel/siop_enable
     chown system system /sys/class/lcd/panel/temperature
 
+
 # Permissions for LCD HMT
     chown system system /sys/class/lcd/panel/hmt_on
     chown system system /sys/class/lcd/panel/hmt_bright
@@ -709,10 +710,10 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     ioprio be 0
 
 # Permissions for MDNIE
-    chmod 0755 /sys/class/mdnie/mdnie/mode
-    chmod 0755 /sys/class/mdnie/mdnie/scenario
     chown system media_rw /sys/class/mdnie/mdnie/mode
     chown system media_rw /sys/class/mdnie/mdnie/scenario
+    chmod 0644 /sys/class/mdnie/mdnie/mode
+    chmod 0644 /sys/class/mdnie/mdnie/scenario
     chown system system /sys/class/mdnie/mdnie/accessibility
     chown system system /sys/class/mdnie/mdnie/auto_brightness
     chown system system /sys/class/mdnie/mdnie/sensorRGB
