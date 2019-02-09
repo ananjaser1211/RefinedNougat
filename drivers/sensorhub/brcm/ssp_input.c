@@ -20,6 +20,11 @@
 #include <linux/iio/buffer.h>
 #include <linux/iio/types.h>
 
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	extern void sensor_prox_report(unsigned int detected);
+#endif	
+
+
 #include <linux/moduleparam.h>
 
 static int wl_prox = 1;
@@ -447,6 +452,12 @@ void report_prox_data(struct ssp_data *data, struct sensor_value *proxdata)
 {
 	ssp_dbg("[SSP] Proximity Sensor Detect : %u, raw : %u\n",
 		proxdata->prox[0], proxdata->prox[1]);
+
+	// LukasAddon : send sensor prox status to DT2W module
+	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+		sensor_prox_report(proxdata->prox[0]);
+	#endif	
+	
 
 	data->buf[PROXIMITY_SENSOR].prox[0] = proxdata->prox[0];
 	data->buf[PROXIMITY_SENSOR].prox[1] = proxdata->prox[1];

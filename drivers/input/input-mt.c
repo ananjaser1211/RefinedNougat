@@ -13,6 +13,14 @@
 #include <linux/slab.h>
 
 #define TRKID_SGN	((TRKID_MAX + 1) >> 1)
+//#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+extern void dt2w_input_event(unsigned int code, int value);
+//#endif
+//#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+extern void s2w_input_event(unsigned int code, int value);
+//#endif
+
+
 
 static void copy_abs(struct input_dev *dev, unsigned int dst, unsigned int src)
 {
@@ -130,27 +138,35 @@ EXPORT_SYMBOL(input_mt_destroy_slots);
  * corresponding absbit field is set.
  */
 void input_mt_report_slot_state(struct input_dev *dev,
-				unsigned int tool_type, bool active)
+				                unsigned int tool_type,
+                                bool active)
 {
 	struct input_mt *mt = dev->mt;
 	struct input_mt_slot *slot;
 	int id;
 
-	if (!mt)
-		return;
+	if (!mt) {
+        return;
+    }
 
 	slot = &mt->slots[mt->slot];
 	slot->frame = mt->frame;
 
 	if (!active) {
 		input_event(dev, EV_ABS, ABS_MT_TRACKING_ID, -1);
+        //#ifndef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+            dt2w_input_event(ABS_MT_TRACKING_ID, -1);
+        //#endif
+
+        //#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+            s2w_input_event(ABS_MT_TRACKING_ID, -1);
+        //#endif
 		return;
 	}
 
 	id = input_mt_get_value(slot, ABS_MT_TRACKING_ID);
 	if (id < 0 || input_mt_get_value(slot, ABS_MT_TOOL_TYPE) != tool_type)
 		id = input_mt_new_trkid(mt);
-
 	input_event(dev, EV_ABS, ABS_MT_TRACKING_ID, id);
 	input_event(dev, EV_ABS, ABS_MT_TOOL_TYPE, tool_type);
 }

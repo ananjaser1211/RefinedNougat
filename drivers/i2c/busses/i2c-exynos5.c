@@ -163,7 +163,7 @@ static LIST_HEAD(drvdata_list);
 #define HSI2C_POLLING 0
 #define HSI2C_INTERRUPT 1
 
-#define EXYNOS5_I2C_TIMEOUT (msecs_to_jiffies(1000))
+#define EXYNOS5_I2C_TIMEOUT (msecs_to_jiffies(100))
 
 #define EXYNOS5_FIFO_SIZE		16
 
@@ -432,7 +432,9 @@ static void exynos5_i2c_reset(struct exynos5_i2c *i2c)
 {
 	u32 i2c_ctl;
 
-	dev_dbg(i2c->dev, "exynos5_i2c_reset\n");
+	dev_err(i2c->dev, "exynos5_i2c_reset\n");
+
+	printk(KERN_ERR "Xtopher: exynos5_i2c_reset\n");
 
 	/* Set and clear the bit for reset */
 	i2c_ctl = readl(i2c->regs + HSI2C_CTL);
@@ -500,50 +502,32 @@ static irqreturn_t exynos5_i2c_irq_chkdone(int irqno, void *dev_id)
 	struct exynos5_i2c *i2c = dev_id;
 	unsigned long reg_val;
 	unsigned char byte;
-	unsigned long timeout;
-	int ret = -EBUSY;
 
 	if (i2c->msg->flags & I2C_M_RD) {
-		timeout = jiffies + EXYNOS5_I2C_TIMEOUT;
-		while (time_before(jiffies, timeout)) {
-			if ((readl(i2c->regs + HSI2C_FIFO_STATUS) &
-				0x1000000) == 0) {
-				byte = (unsigned char)readl(i2c->regs + HSI2C_RX_DATA);
-				i2c->msg->buf[i2c->msg_ptr++] = byte;
-			}
+		while ((readl(i2c->regs + HSI2C_FIFO_STATUS) &
+			0x1000000) == 0) {
+			byte = (unsigned char)readl(i2c->regs + HSI2C_RX_DATA);
+			i2c->msg->buf[i2c->msg_ptr++] = byte;
+		}
 
+		if (i2c->msg_ptr >= i2c->msg->len) {
+			reg_val = readl(i2c->regs + HSI2C_INT_ENABLE);
+			reg_val &= ~(HSI2C_INT_RX_ALMOSTFULL_EN);
+			writel(reg_val, i2c->regs + HSI2C_INT_ENABLE);
+			exynos5_i2c_stop(i2c);
+		}
+	} else {
+		while ((readl(i2c->regs + HSI2C_FIFO_STATUS) &
+			0x80) == 0) {
 			if (i2c->msg_ptr >= i2c->msg->len) {
 				reg_val = readl(i2c->regs + HSI2C_INT_ENABLE);
-				reg_val &= ~(HSI2C_INT_RX_ALMOSTFULL_EN);
+				reg_val &= ~(HSI2C_INT_TX_ALMOSTEMPTY_EN);
 				writel(reg_val, i2c->regs + HSI2C_INT_ENABLE);
-				exynos5_i2c_stop(i2c);
-				ret = 0;
 				break;
 			}
+			byte = i2c->msg->buf[i2c->msg_ptr++];
+			writel(byte, i2c->regs + HSI2C_TX_DATA);
 		}
-
-		if (ret == -EBUSY)
-			dev_err(i2c->dev, "rx timeout in HSI2C interrupt handler\n");
-
-	} else {
-		timeout = jiffies + EXYNOS5_I2C_TIMEOUT;
-		while (time_before(jiffies, timeout)) {
-			if ((readl(i2c->regs + HSI2C_FIFO_STATUS) &
-				0x80) == 0) {
-				if (i2c->msg_ptr >= i2c->msg->len) {
-					reg_val = readl(i2c->regs + HSI2C_INT_ENABLE);
-					reg_val &= ~(HSI2C_INT_TX_ALMOSTEMPTY_EN);
-					writel(reg_val, i2c->regs + HSI2C_INT_ENABLE);
-					ret = 0;
-					break;
-				}
-				byte = i2c->msg->buf[i2c->msg_ptr++];
-				writel(byte, i2c->regs + HSI2C_TX_DATA);
-			}
-		}
-
-		if (ret == -EBUSY)
-			dev_err(i2c->dev, "tx timeout in HSI2C interrupt handler\n");
 	}
 
 	reg_val = readl(i2c->regs + HSI2C_INT_STATUS);
@@ -679,9 +663,9 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c, struct i2c_msg *msgs, i
 			}
 
 			if (ret == -EAGAIN) {
-				dump_i2c_register(i2c);
+				//dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
-				dev_err(i2c->dev, "rx timeout\n");
+				dev_err(i2c->dev, "rx timeout 1 (dump disabled)\n");
 				return ret;
 			}
 		} else {
@@ -715,9 +699,9 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c, struct i2c_msg *msgs, i
 			}
 
 			if (timeout == 0) {
-				dump_i2c_register(i2c);
+				//dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
-				dev_err(i2c->dev, "rx timeout\n");
+				dev_err(i2c->dev, "rx timeout 2 (dump disabled)\n");
 				ret = -EAGAIN;
 				return ret;
 			}
@@ -743,9 +727,9 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c, struct i2c_msg *msgs, i
 				disable_irq(i2c->irq);
 
 			if (timeout == 0) {
-				dump_i2c_register(i2c);
+				//dump_i2c_register(i2c);
 				exynos5_i2c_reset(i2c);
-				dev_err(i2c->dev, "tx timeout\n");
+				dev_err(i2c->dev, "tx timeout 1 (dump disabled)\n");
 				return ret;
 			}
 
@@ -764,9 +748,9 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c, struct i2c_msg *msgs, i
 					udelay(100);
 				}
 				if (ret == -EAGAIN) {
-					dump_i2c_register(i2c);
+					//dump_i2c_register(i2c);
 					exynos5_i2c_reset(i2c);
-					dev_err(i2c->dev, "tx timeout\n");
+					dev_err(i2c->dev, "tx timeout 2 (dump disabled)\n");
 					return ret;
 				}
 			} else {
@@ -810,9 +794,9 @@ static int exynos5_i2c_xfer_msg(struct exynos5_i2c *i2c, struct i2c_msg *msgs, i
 			}
 		}
 		if (ret == -EAGAIN) {
-			dump_i2c_register(i2c);
+			//dump_i2c_register(i2c);
 			exynos5_i2c_reset(i2c);
-			dev_err(i2c->dev, "tx timeout\n");
+			dev_err(i2c->dev, "tx timeout 3 (dump disabled)\n");
 			return ret;
 		}
 	}
@@ -836,38 +820,38 @@ static int exynos5_i2c_xfer(struct i2c_adapter *adap,
 
 	clk_prepare_enable(i2c->clk);
 	if (i2c->need_hw_init){
-		dev_dbg(i2c->dev, "exynos5_i2c_xfer call exynos5_i2c_reset\n");
+		dev_err(i2c->dev, "exynos5_i2c_xfer call exynos5_i2c_reset for init\n");
 		exynos5_i2c_reset(i2c);
 	}
-	for (retry = 0; retry < adap->retries; retry++) {
-		for (i = 0; i < num; i++) {
-			stop = (i == num - 1);
+	// LukasAddon disable retries , only
+	//for (retry = 0; retry < adap->retries; retry++) {
+	for (i = 0; i < num; i++) {
+		stop = (i == num - 1);
 
-			if (i2c->transfer_delay)
-				udelay(i2c->transfer_delay);
+		if (i2c->transfer_delay)
+			udelay(i2c->transfer_delay);
 
-			ret = exynos5_i2c_xfer_msg(i2c, msgs_ptr, stop);
-			msgs_ptr++;
+		ret = exynos5_i2c_xfer_msg(i2c, msgs_ptr, stop);
+		msgs_ptr++;
 
-			if (ret == -EAGAIN) {
-				msgs_ptr = msgs;
-				break;
-			} else if (ret < 0) {
-				goto out;
-			}
-		}
-
-		if ((i == num) && (ret != -EAGAIN))
+		if (ret == -EAGAIN) {
+			msgs_ptr = msgs;
 			break;
-
-		dev_dbg(i2c->dev, "retrying transfer (%d)\n", retry);
-
-		udelay(100);
+		} else if (ret < 0) {
+			goto out;
+		}
 	}
+	//if ((i == num) && (ret != -EAGAIN))
+	//	break;
 
+	//dev_err(i2c->dev, "retrying transfer (%d)\n", retry);
+
+	//udelay(100);
+	//}
 	if (i == num) {
 		ret = num;
 	} else {
+		/* Only one message, cannot access the device */
 		ret = -EREMOTEIO;
 		dev_warn(i2c->dev, "xfer message failed\n");
 	}
@@ -1032,11 +1016,7 @@ static int exynos5_i2c_probe(struct platform_device *pdev)
 	i2c->bus_id = of_alias_get_id(i2c->adap.dev.of_node, "hsi2c");
 
 	exynos5_i2c_init(i2c);
-	
 
-#ifdef CONFIG_FIX_I2C_BUS_NUM
-	if (of_property_read_u32(np, "samsung,i2c-bus-num", &i2c->adap.nr))
-#endif
 	i2c->adap.nr = -1;
 	ret = i2c_add_numbered_adapter(&i2c->adap);
 	if (ret < 0) {

@@ -10,7 +10,7 @@
  */
 
 #include <linux/module.h>
-
+	
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
@@ -24,6 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/input.h>
 #include <linux/gpio_keys.h>
+#include <linux/wakelock.h>
 #include <linux/workqueue.h>
 #include <linux/gpio.h>
 #include <linux/of_platform.h>
@@ -32,6 +33,10 @@
 #include <linux/spinlock.h>
 #include <mach/cpufreq.h>
 
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+#include <linux/input/doubletap2wake.h>
+#endif
+
 #include <linux/sec_sysfs.h>
 #include <linux/sec_debug.h>
 
@@ -39,24 +44,10 @@
 #include <linux/input/input_booster.h>
 #endif
 
+#define LOGTAG "[doubletap2wakegpiosync]: "
+
 struct device *sec_key;
 EXPORT_SYMBOL(sec_key);
-int wakeup_reason;
-bool irq_in_suspend;
-bool suspend_state;
-
-bool wakeup_by_key(void) {
-	if (irq_in_suspend) {
-		if (wakeup_reason == KEY_HOMEPAGE) {
-			irq_in_suspend = false;
-			wakeup_reason = 0;
-			return true;
-		}
-	}
-	return false;
-}
-
-EXPORT_SYMBOL(wakeup_by_key);
 
 struct gpio_button_data {
 	struct gpio_keys_button *button;
@@ -82,6 +73,30 @@ struct gpio_keys_drvdata {
 	struct gpio_button_data data[0];
 };
 
+/*static void sync_system(struct work_struct *work);
+static DECLARE_WORK(sync_system_work, sync_system);
+struct wake_lock sync_wake_lock;
+
+static bool suspended = false;*/
+
+/*static void sync_system(struct work_struct *work)
+{
+	if (suspended)
+		msleep(100);
+	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE_DEBUG
+			pr_info(LOGTAG"syncsystem call, gpiokeys\n");
+			pr_info("%s +\n", __func__);
+	#endif
+	
+	wake_lock(&sync_wake_lock);
+	emergency_sync();
+	wake_unlock(&sync_wake_lock);
+	
+	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE_DEBUG
+			pr_info(LOGTAG"syncsystem end call, gpiokeys\n");
+			pr_info("%s -\n", __func__);
+	#endif
+}*/
 /*
  * SYSFS interface for enabling/disabling keys and switches:
  *
@@ -451,7 +466,14 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	unsigned int type = button->type ?: EV_KEY;
 	int state = (gpio_get_value_cansleep(button->gpio) ? 1 : 0) ^ button->active_low;
 	struct irq_desc *desc = irq_to_desc(gpio_to_irq(button->gpio));
-
+	/*#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+		if (button->code == KEY_POWER  && dt2w_switch ) {
+			schedule_work(&sync_system_work);
+			if (!!state) {
+				printk(KERN_INFO "PWR key is %s\n", state ? "pressed" : "released");
+			}
+		}	
+	#endif*/
 #if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
 	if ((button->code == KEY_POWER)) {
 		printk(KERN_INFO "GPIO-KEY : PWR key is %s[%d]\n",
@@ -468,9 +490,9 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	}
 #else
 	if ((button->code == KEY_POWER) && !!state) {
-		printk(KERN_INFO "GPIO-KEY : key is pressed!!\n");
+		printk(KERN_INFO "GPIO-KEY : PWR key is pressed!!\n");
 	} else if ((button->code == KEY_HOMEPAGE) && !!state) {
-		printk(KERN_INFO "GPIO-KEY : key is pressed!\n");
+		printk(KERN_INFO "GPIO-KEY : HOME key is pressed!\n");	
 	}
 #endif
 
@@ -566,12 +588,6 @@ static irqreturn_t gpio_keys_gpio_isr(int irq, void *dev_id)
 #endif
 
 	BUG_ON(irq != bdata->irq);
-
-	if (suspend_state) {
-		irq_in_suspend = true;
-		wakeup_reason = bdata->button->code;
-		pr_info("%s before resume by %d\n", __func__, wakeup_reason);
-	}
 
 	if (bdata->button->wakeup)
 		pm_stay_awake(bdata->input->dev.parent);
@@ -753,6 +769,7 @@ static void gpio_keys_report_state(struct gpio_keys_drvdata *ddata)
 			gpio_keys_gpio_report_event(bdata);
 	}
 	input_sync(input);
+	printk(KERN_INFO "GPIO-KEY : %s called!\n", __func__);
 }
 
 static int gpio_keys_open(struct input_dev *input)
@@ -788,6 +805,9 @@ static void gpio_keys_close(struct input_dev *input)
 		struct gpio_button_data *bdata = &ddata->data[i];
 		if (bdata->button->code == KEY_HOMEPAGE) {
 			input_booster_send_event(BOOSTER_DEVICE_KEY, BOOSTER_MODE_FORCE_OFF);
+		}
+		if ((bdata->button->code == KEY_RECENT) ||(bdata->button->code == KEY_BACK)) {
+			input_booster_send_event(BOOSTER_DEVICE_TOUCHKEY, BOOSTER_MODE_FORCE_OFF);
 		}
 	}
 #endif
@@ -964,9 +984,6 @@ static int gpio_keys_probe(struct platform_device *pdev)
 	input->id.vendor = 0x0001;
 	input->id.product = 0x0001;
 	input->id.version = 0x0100;
-	wakeup_reason = 0;
-	suspend_state = false;
-	irq_in_suspend = false;
 
 	/* Enable auto repeat feature of Linux input subsystem */
 	if (pdata->rep)
@@ -1105,10 +1122,6 @@ static int gpio_keys_suspend(struct device *dev)
 	struct input_dev *input = ddata->input;
 	int i;
 
-	suspend_state = true;
-	irq_in_suspend = false;
-	wakeup_reason = 0;
-
 	if (device_may_wakeup(dev)) {
 		for (i = 0; i < ddata->pdata->nbuttons; i++) {
 			struct gpio_button_data *bdata = &ddata->data[i];
@@ -1135,7 +1148,6 @@ static int gpio_keys_resume(struct device *dev)
 	int error = 0;
 	int i;
 
-	suspend_state = false;
 	if (device_may_wakeup(dev)) {
 		for (i = 0; i < ddata->pdata->nbuttons; i++) {
 			struct gpio_button_data *bdata = &ddata->data[i];

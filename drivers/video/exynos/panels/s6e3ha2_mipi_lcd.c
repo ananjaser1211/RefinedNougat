@@ -25,9 +25,14 @@
 #include <linux/reboot.h>
 #include <linux/of_gpio.h>
 
-#ifdef CONFIG_POWERSUSPEND
-#include <linux/powersuspend.h>
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+#include <linux/input/doubletap2wake.h>
+extern void sensor_prox_report(unsigned int detected);
+extern void dt2w_screen_report(unsigned int detected);
 #endif
+
+
+
 
 #include <video/mipi_display.h>
 #include "../decon_display/decon_mipi_dsi.h"
@@ -89,6 +94,8 @@
 #define LDI_RDDPM_REG		0x0A
 #define LDI_BOOSTER_VAL		0x9C
 #define LDI_ESDERR_REG		0xEE
+
+#define LOGTAG "[doubletap2wakelcd]: "
 
 #ifdef SMART_DIMMING_DEBUG
 #define smtd_dbg(format, arg...)	printk(format, ##arg)
@@ -2461,10 +2468,12 @@ static int s6e3ha2_displayon(struct mipi_dsim_device *dsim)
 	struct lcd_info *lcd = dev_get_drvdata(&dsim->lcd->dev);
 
 	s6e3ha2_power(lcd, FB_BLANK_UNBLANK);
-	
-#ifdef CONFIG_POWERSUSPEND
-	set_power_suspend_state_panel_hook(POWER_SUSPEND_INACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (wakeup)
-#endif
+
+	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+		sensor_prox_report(0);  // LukasAddon : set  flg_sensor_prox_detecting to false if display on
+		// because some times prox sensor didnt response it state in event.
+		dt2w_screen_report(1); // LukasAddon : set dt2w event disabled
+	#endif
 
 	return 0;
 }
@@ -2475,9 +2484,10 @@ static int s6e3ha2_suspend(struct mipi_dsim_device *dsim)
 
 	s6e3ha2_power(lcd, FB_BLANK_POWERDOWN);
 	
-#ifdef CONFIG_POWERSUSPEND
-	set_power_suspend_state_panel_hook(POWER_SUSPEND_ACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (sleep)
-#endif
+	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+		dt2w_screen_report(0); // LukasAddon : set dt2w event enabled
+	#endif	
+
 
 	return 0;
 }
