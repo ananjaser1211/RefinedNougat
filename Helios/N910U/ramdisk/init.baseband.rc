@@ -24,7 +24,7 @@ on fs
 
 start cpboot-daemon
 
-service cpboot-daemon /sbin/bin/cbd -d -t xmm72xx_lli -b l -m l -p 13
+service cpboot-daemon /sbin/cbd -d -t xmm72xx_lli -b l -m l -p 13
     class main
     user root
     group radio cache inet misc audio sdcard_r sdcard_rw log shell
