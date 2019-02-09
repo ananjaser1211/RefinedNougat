@@ -44,7 +44,7 @@ extern struct kbase_device *pkbdev;
 
 /*  clk,vol,abb,min,max,down stay,time_in_state,pm_qos mem,pm_qos int,pm_qos cpu_kfc_min,pm_qos cpu_egl_max */
 static gpu_dvfs_info gpu_dvfs_table_default[] = {
-        {800, 1150000, 0, 98, 100, 1, 0, 825000, 400000, 1300000, 1700000},
+        {800, 1150000, 0, 97, 100, 1, 0, 825000, 400000, 1300000, 1700000},
         {730, 1150000, 0, 97, 99,  1, 0, 825000, 400000, 1300000, 1800000},
         {700, 1150000, 0, 97, 99,  1, 0, 825000, 400000, 1300000, CPU_MAX},
         {667, 1150000, 0, 97, 99,  1, 0, 825000, 400000, 1300000, CPU_MAX},
@@ -94,10 +94,10 @@ static gpu_attribute gpu_config_attributes[] = {
 	{GPU_COLD_MINIMUM_VOL, 0},
 	{GPU_VOLTAGE_OFFSET_MARGIN, 37500},
 	{GPU_TMU_CONTROL, 1},
-        {GPU_TEMP_THROTTLING1, 800},
-        {GPU_TEMP_THROTTLING2, 700},
-        {GPU_TEMP_THROTTLING3, 667},
-        {GPU_TEMP_THROTTLING4, 500},
+	{GPU_TEMP_THROTTLING1, 667},
+	{GPU_TEMP_THROTTLING2, 600},
+	{GPU_TEMP_THROTTLING3, 550},
+	{GPU_TEMP_THROTTLING4, 350},
 	{GPU_TEMP_TRIPPING, 100},
 	{GPU_BOOST_MIN_LOCK, 0},
 	{GPU_BOOST_EGL_MIN_LOCK, 1300000},
