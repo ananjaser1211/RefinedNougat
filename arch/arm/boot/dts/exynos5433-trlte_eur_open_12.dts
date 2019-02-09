@@ -12,7 +12,7 @@
 #include "exynos5433-t_common.dtsi"
 #include "exynos5433-tri_gpio_10.dtsi"
 #include "exynos5433-trlte_battery.dtsi"
-#include "exynos5433-trlte_hp_eur-modem-xmm7260.dtsi"
+#include "exynos5433-trlte_eur-modem-xmm7260.dtsi"
 #include "exynos5433-trlte_mhl3x.dtsi"
 #include "exynos5433-trelte_fingerprint-sensor_00.dtsi"
 

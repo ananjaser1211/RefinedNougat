@@ -1700,7 +1700,7 @@
 		};
 		boot_device@5 {
 			net_boost,label="CLAT";
-			net_boost,node="clat clat4 v4-rmnet0 v4-rmnet1 v4-rmnet2 v4-rmnet3 v4-rmnet4 v4-rmnet5 v4-rmnet6 v4-rmnet7";
+			net_boost,node="clat clat4";
 			net_boost,table_size = <3>;
 			/*		 <Throughput ARM_min ARM_max KFC_min KFC_max MIF INT Task Irq HMPBoost> */
 			net_boost,table= <120 1400000 0 0 0 825000 0 0 0 0
