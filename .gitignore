@@ -7095,4 +7095,6 @@ drivers/input/touchscreen/.doubletap2wake.o.cmd
 drivers/input/touchscreen/.sweep2wake.o.cmd
 drivers/input/touchscreen/doubletap2wake.o
 drivers/input/touchscreen/sweep2wake.o
+drivers/usb/class/.cdc-acm.o.cmd
+drivers/usb/class/cdc-acm.o
 

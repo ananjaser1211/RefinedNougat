@@ -461,7 +461,7 @@ config ARM_CHARLCD
 	  still useful.
 
 config BMP085
-	bool
+	tristate
 	depends on SYSFS
 
 config BMP085_I2C
@@ -542,31 +542,6 @@ config SEC_DEV_JACK
 	---help---
 	 This is Earjack detection driver for Samsung devices.
 
-config EARJACK_ADC_SYSFS
-	bool "EarJack & BTN adc sysfs"
-	depends on SEC_DEV_JACK
-	default n
-	---help---
-	This is sysfs for sec_jack driver jack type and btn type adc values.
-
-config SEC_USE_EXT_CODEC_BIAS
-	bool "use micbias from external codec"
-	depends on SEC_DEV_JACK
-	default n
-
-config RF_EAR_DET
-	bool "Earjack detection for RF performance"
-	default n
-	---help---
-	 This is Earjack detection for RF performance.
-
-config SEC_DEV_JACK_ANT
-	bool "Extenal antenna for ISDB-T"
-	default n
-	help
-	  This option use check for external antenna state
-
-
 config TIMA_LOG
 	tristate "Support for dumping TIMA log"
 	depends on TIMA
@@ -584,9 +559,6 @@ config JACK_ADC_MORE_CTIME
 	bool "JACK ADC conversion time add"
 	depends on INPUT
 	default n
-
-config CHECK_SIMSLOT_COUNT
-	bool "Dual/Single sim support"
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

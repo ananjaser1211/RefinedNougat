@@ -49,10 +49,6 @@
 #define JACK_DEV_NAME "earjack"
 #define JACK_RESELECTOR_NAME "jack_reselector"
 
-#ifdef CONFIG_SND_SOC_SAMSUNG_PACIFIC_RT5659
-void rt5659_micbias1_output(int on);
-#endif
-
 static struct class *jack_class;
 static struct device *jack_dev;
 static struct device *jack_reselector;
@@ -127,14 +123,12 @@ static struct gpio_event_platform_data sec_jack_input_data = {
 static void sec_jack_gpio_init(struct sec_jack_platform_data *pdata)
 {
 /* Ear Microphone BIAS */
-	if (!pdata->use_codec_micbias) {
-		if (gpio_request(pdata->ear_micbias_gpio, "EAR MIC")) {
-			pr_err(KERN_ERR "GPIO_EAR_MIC_BIAS_EN GPIO set error!\n");
-			return;
-		}
-		gpio_direction_output(pdata->ear_micbias_gpio, 1);
-		gpio_set_value(pdata->ear_micbias_gpio, 0);
+	if (gpio_request(pdata->ear_micbias_gpio, "EAR MIC")) {
+		pr_err(KERN_ERR "GPIO_EAR_MIC_BIAS_EN GPIO set error!\n");
+		return;
 	}
+	gpio_direction_output(pdata->ear_micbias_gpio, 1);
+	gpio_set_value(pdata->ear_micbias_gpio, 0);
 }
 
 static void set_sec_micbias_state(struct sec_jack_info *hi, bool state)
@@ -143,10 +137,6 @@ static void set_sec_micbias_state(struct sec_jack_info *hi, bool state)
  
 	if(pdata->ear_micbias_gpio > 0)
 		gpio_set_value(pdata->ear_micbias_gpio, state); /*Uses external Mic Bias*/
-#ifdef CONFIG_SND_SOC_SAMSUNG_PACIFIC_RT5659
-	else if (pdata->use_codec_micbias)
-		rt5659_micbias1_output(state);
-#endif
 }
 
 static int sec_jack_get_adc_data(struct iio_channel *padc)
@@ -511,16 +501,11 @@ static struct sec_jack_platform_data *sec_jack_populate_dt_pdata(struct device *
 	} else
 		pr_info("%s : earjack-sendend-gpio =%d\n", __func__, pdata->send_end_gpio);
 
-		if (of_find_property(dev->of_node, "use-codec-micbias", NULL))
-		pdata->use_codec_micbias = true;
-
-	if (!pdata->use_codec_micbias) {
-		pdata->ear_micbias_gpio = of_get_named_gpio(dev->of_node, "earjack-micbias-gpio", 0);
-		if (pdata->ear_micbias_gpio < 0) {
-			pr_err("%s : can not find the earjack-micbias-gpio in the dt\n", __func__);
-		} else
-			pr_info("%s : earjack-micbias-gpio =%d\n", __func__, pdata->ear_micbias_gpio);
-	}
+	pdata->ear_micbias_gpio = of_get_named_gpio(dev->of_node, "earjack-micbias-gpio", 0);
+	if (pdata->ear_micbias_gpio < 0) {
+		pr_err("%s : can not find the earjack-micbias-gpio in the dt\n", __func__);
+	} else
+		pr_info("%s : earjack-micbias-gpio =%d\n", __func__, pdata->ear_micbias_gpio);
 
 	for( i=0; i<4; i++)
 	{
@@ -916,9 +901,7 @@ err_gpio_request:
 	kfree(hi);
 err_kzalloc:
 	atomic_set(&instantiated, 0);
-	if (!pdata->use_codec_micbias)
-		gpio_free(pdata->ear_micbias_gpio);
-
+	gpio_free(pdata->ear_micbias_gpio);
 
 	return ret;
 }

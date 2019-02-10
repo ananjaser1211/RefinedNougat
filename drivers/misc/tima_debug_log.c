@@ -27,8 +27,6 @@
 #define	DEBUG_LOG_SIZE	(1<<20)
 #define	DEBUG_LOG_MAGIC	(0xaabbccdd)
 #define	DEBUG_LOG_ENTRY_SIZE	128
-#define TIMA_DEBUG_LOG_SIZE (1<<20)
-#define TIMA_SEC_LOG_SIZE   (1<<18)
 
 typedef struct debug_log_entry_s
 {
@@ -67,22 +65,10 @@ ssize_t	tima_read(struct file *filep, char __user *buf, size_t size, loff_t *off
 		tima_log_addr = tima_secure_log_addr;
 	else if( !strcmp(filep->f_path.dentry->d_iname, "tima_debug_log"))
 		tima_log_addr = tima_debug_log_addr;
-	else if(!strcmp(filep->f_path.dentry->d_iname, "tima_debug_rkp_log")) {
-		if (*offset >= TIMA_DEBUG_LOG_SIZE) {
-			return -EINVAL;
-		} else if (*offset + size > TIMA_DEBUG_LOG_SIZE) {
-			size = (TIMA_DEBUG_LOG_SIZE) - *offset;
-		}
+	else if( !strcmp(filep->f_path.dentry->d_iname, "tima_debug_rkp_log"))
 		tima_log_addr = tima_debug_rkp_log_addr;
-	}
-	else if(!strcmp(filep->f_path.dentry->d_iname, "tima_secure_rkp_log")) {
-		if (*offset >= TIMA_SEC_LOG_SIZE) {
-			return -EINVAL;
-		} else if (*offset + size > TIMA_SEC_LOG_SIZE) {
-			size = (TIMA_SEC_LOG_SIZE) - *offset;
-		}
+	else
 		tima_log_addr = tima_secure_rkp_log_addr;
-	}
 
 	if (copy_to_user(buf, (const char *)tima_log_addr + (*offset), size)) {
 		printk(KERN_ERR"Copy to user failed\n");
