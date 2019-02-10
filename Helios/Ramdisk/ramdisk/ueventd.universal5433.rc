@@ -128,6 +128,7 @@
 /dev/block/mmcblk0p13     0660   system     radio
 /dev/block/mmcblk0p14     0660   system     radio
 /dev/umts*                0660   system     radio
+/dev/umts_csd             0660   system     loop_radio
 
 # DNT
 /dev/block/platform/15540000.dwmmc0/by-name/DNT     0660   system     system
