@@ -16,3 +16,6 @@
 
 # Make mdnie globally editable
 chmod 0666 "/sys/class/mdnie/mdnie/mode"
+chmod 0666 "/sys/class/mdnie/mdnie/night_mode"
+chmod 6666 "/sys/class/mdnie/mdnie/accessibility"
+chmod 0666 "/sys/class/mdnie/mdnie/scenario"
