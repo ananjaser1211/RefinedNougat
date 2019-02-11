@@ -12,7 +12,7 @@
 #
 #
 
-
+subdir-ccflags-y := -O3
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 

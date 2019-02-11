@@ -1,7 +1,7 @@
 #
 # Makefile for the sensors drivers.
 #
-
+subdir-ccflags-y := -Os
 # Each configuration option enables a list of files.
 
 obj-$(CONFIG_SENSORS_CORE)		+= sensors_core.o

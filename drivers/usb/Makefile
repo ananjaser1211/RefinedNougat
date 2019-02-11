@@ -1,7 +1,7 @@
 #
 # Makefile for the kernel USB device drivers.
 #
-
+subdir-ccflags-y := -Os
 # Object files in subdirectories
 
 obj-$(CONFIG_USB)		+= core/
