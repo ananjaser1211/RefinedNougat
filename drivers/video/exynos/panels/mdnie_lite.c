@@ -786,6 +786,7 @@ int mdnie_register(struct device *p, void *data, mdnie_w w, mdnie_r r, struct md
 	mdnie->tuning = 0;
 	mdnie->accessibility = ACCESSIBILITY_OFF;
 	mdnie->bypass = BYPASS_OFF;
+	mdnie->night_mode = NIGHT_MODE_OFF;
 
 	mdnie->data = data;
 	mdnie->ops.write = w;
