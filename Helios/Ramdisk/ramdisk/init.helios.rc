@@ -3,15 +3,14 @@
 # IMPORTANT: Do not create world writable files or directories.
 # This is a common source of Android security bugs.
 #
-# RefinedKernel 2018
+# HeliosKernel 2019
 #
 on early-init
+    start perm
 	start sensorhubservice
 	start lhd
 
 on boot
-    start fake_knox
-    start dispmode
 
 #unify sysfs node for GPU
     chmod 0444 /sys/devices/platform/gpusysfs/gpu_clock
@@ -20,7 +19,7 @@ on boot
     chown system shell /sys/devices/platform/gpusysfs/gpu_governor
     chown system shell /sys/devices/platform/gpusysfs/fps
 	
-  chown radio system /sys/devices/11400000.mali/dvfs_table
+    chown radio system /sys/devices/11400000.mali/dvfs_table
     chown radio system /sys/devices/11400000.mali/dvfs_min_lock
     chown radio system /sys/devices/11400000.mali/dvfs_max_lock
     chmod 0664 /sys/devices/11400000.mali/dvfs_table
@@ -40,17 +39,6 @@ on boot
     chmod 0664 /sys/class/devfreq/bus_int.6/available_frequencies
     chmod 0664 /sys/class/devfreq/bus_int.6/min_freq
     chmod 0664 /sys/class/devfreq/bus_int.6/max_freq	
-
-   # override init.rc to keep plenty of large order chunks around
-    # to improve allocation times
-    write /proc/sys/vm/min_free_kbytes 32768
-    write /proc/sys/vm/min_free_order_shift 1
-
-    mount debugfs /sys/kernel/debug /sys/kernel/debug
-
-    # Set up kernel tracing, but disable it by default
-    chmod 0222 /sys/kernel/debug/tracing/trace_marker
-    write /sys/kernel/debug/tracing/tracing_on 0
 
     # Change permission for interactive governor
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
@@ -101,43 +89,6 @@ on boot
     chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
     chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
 
-on property:sys.boot_completed=1
-    start sysinit
-	start wakelock
-    start killer
-	
-service fake_knox /sbin/fake_knox.sh
-    user root
-    seclabel u:r:init:s0
-    oneshot
-    disabled
-
-service dispmode /sbin/dispmode.sh
-    user root
-    seclabel u:r:init:s0
-    oneshot
-    disabled
-
-service sysinit /sbin/sysinit.sh
-    class late_start
-    user root
-    seclabel u:r:init:s0
-    oneshot
-    disabled
-	
-service wakelock /sbin/wakelock.sh
-    class late_start
-    user root
-    seclabel u:r:init:s0
-    oneshot
-    disabled
-
-service killer /sbin/killer.sh
-    user root
-    seclabel u:r:init:s0
-    oneshot
-    disabled
-	
 # SensorHub
     chown system radio /sys/class/sensors/ssp_sensor/enable
     chown system radio /sys/class/sensors/ssp_sensor/mcu_rev
@@ -161,7 +112,7 @@ service killer /sbin/killer.sh
     chown system radio /sys/class/sensors/ssp_sensor/uncal_mag_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/ssp_flush
     chmod 0600 /dev/batch_io
-    chown system system /dev/batch_io	
+    chown system system /dev/batch_io  
 
 on fs
 # Permissions for ION
@@ -176,4 +127,41 @@ on fs
     copy /system/app/wv.keys /factory/wv.keys
 
 # Permission for DRM Key
-    chmod 0644 /factory/wv.keys
+    chmod 0644 /factory/wv.keys   
+
+service main /sbin/helios.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service perm /sbin/perm.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled      
+
+service zipalign /sbin/zipalign.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service initd /sbin/initd.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service dispmode /sbin/dispmode.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled     
+
+on property:sys.boot_completed=1
+    start main
+    start perm
+    start zipalign
+    start initd
+    start dispmode

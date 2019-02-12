@@ -13,9 +13,23 @@
 # limitations under the License.
 #
 #
+RUN=/sbin/busybox;
+LOGFILE=/data/helios/displaymode.log
 
+log_print() {
+  echo "$1"
+  echo "$1" >> $LOGFILE
+}
+log_print "------------------------------------------------------"
+log_print "**helios DisplayMode script started at $( date +"%d-%m-%Y %H:%M:%S" )**"
+
+log_print "Run chmod"
 # Make mdnie globally editable
 chmod 0666 "/sys/class/mdnie/mdnie/mode"
 chmod 0666 "/sys/class/mdnie/mdnie/night_mode"
 chmod 6666 "/sys/class/mdnie/mdnie/accessibility"
 chmod 0666 "/sys/class/mdnie/mdnie/scenario"
+
+# Exit
+   log_print "**helios DisplayMode script finished at $( date +"%d-%m-%Y %H:%M:%S" )**"
+   log_print "------------------------------------------------------"
