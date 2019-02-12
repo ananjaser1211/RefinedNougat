@@ -32,10 +32,24 @@ rebootlog_print() {
   echo "$1" >> $REBOOTLOGFILE
 }
 
+   log_print "Creat Dirs"
+
 if [ ! -e /data/helios ]; then
 	mkdir -p /data/helios
 	chown -R root.root /data/helios
 	chmod -R 755 /data/helios
+fi
+
+if [ ! -e /data/heliosLogcat ]; then
+  mkdir -p /data/heliosLogcat
+  chown -R root.root /data/heliosLogcat
+  chmod -R 755 /data/heliosLogcat
+fi
+
+   log_print "Backup previous logcat"
+
+if [ -e /data/helios/Refined_logger.log ]; then
+  cp "/data/helios/Refined_logger.log" "/data/heliosLogcat/Refined_Logger_$(date +"%d-%m-%Y %H:%M:%S").log"
 fi
 
 for FILE in /data/helios/*; do
@@ -136,6 +150,11 @@ su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$Receiver"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeReceiver"
+
+   log_print "Start RefinedLogger"
+
+# RefinedLogger
+/system/bin/logcat *:E > /data/helios/Refined_logger.log
 
    log_print "Remount"
 
