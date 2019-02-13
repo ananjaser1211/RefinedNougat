@@ -7097,4 +7097,7 @@ drivers/input/touchscreen/doubletap2wake.o
 drivers/input/touchscreen/sweep2wake.o
 drivers/usb/class/.cdc-acm.o.cmd
 drivers/usb/class/cdc-acm.o
+drivers/battery/max77843_fuelgauge.c
+block/blk-tag.o.dungeon.25798.TLRvnc
+security/lsm_audit.o.dungeon.25750.gBmHwU
 
