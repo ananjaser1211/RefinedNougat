@@ -382,6 +382,26 @@ config EXYNOS_CONTENT_PATH_PROTECTION
 	help
 	  Enable content path protection of EXYNOS.
 
+config VARIANT_TRELTE
+	bool "Samsung Galaxy N4 3G/LTE (N910C/H)
+	default n
+
+config VARIANT_TRHPLTE
+	bool "Samsung Galaxy N4 LTE (N910U)
+	default n
+
+config VARIANT_TRELTESKT
+	bool "Samsung Galaxy N4 LTE SKT (N910S/L/K)
+	default n
+
+config VARIANT_TBELTESKT
+	bool "Samsung Galaxy N4 EDGE LTE SKT (N915S/L/K)
+	default n
+
+config VARIANT_TRE3CALTELGT
+	bool "Samsung Galaxy N4 S-LTE SKT (N910C)
+	default n			
+
 config EXYNOS_ATAGS
 	bool "ATAGS based boot for EXYNOS (deprecated)"
 	depends on !ARCH_MULTIPLATFORM
