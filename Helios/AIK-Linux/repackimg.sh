@@ -275,5 +275,5 @@ if [ -f split_img/*-tailtype ]; then
 fi;
 
 echo "Done!";
-exit 0;
+exit;
 

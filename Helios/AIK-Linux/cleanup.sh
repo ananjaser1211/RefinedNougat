@@ -15,4 +15,4 @@ if [ ! -z "$(ls ramdisk/* 2>/dev/null)" ] && [ "$(stat -c %U ramdisk/* | head -n
 fi;
 $sudo rm -rf ramdisk split_img *new.*;
 echo "Working directory cleaned.";
-exit 0;
+exit;
