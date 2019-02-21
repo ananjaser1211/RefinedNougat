@@ -76,7 +76,3 @@ service qemu-props /system/bin/qemu-props
 
 service goldfish-logcat /system/bin/logcat -Q
     oneshot
-
-service fingerprintd /system/bin/fingerprintd
-    class late_start
-    user system

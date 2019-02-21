@@ -1,0 +1,36 @@
+on init
+    mkdir /efs 0771 radio system
+    symlink /dev/block/platform/15540000.dwmmc0/by-name/RADIO /dev/mbin0
+    restorecon /dev/mbin0
+
+    symlink  /sys/devices/15510000.usb/ehci_power /dev/ehci_power
+    symlink  /sys/devices/10f24000.mipi-lli /dev/mipi-lli
+
+    write /sys/class/net/rmnet0/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet1/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet2/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet3/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet4/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet5/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet6/queues/rx-0/rps_cpus 1
+    write /sys/class/net/rmnet7/queues/rx-0/rps_cpus 1
+    write /proc/sys/net/core/netdev_max_backlog 8192
+
+on fs
+# MIF
+    chown radio radio sys/devices/virtual/misc/multipdp/waketime
+    chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
+    chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state
+
+start cpboot-daemon
+
+service cpboot-daemon /sbin/cbd -d -t xmm72xx_lli -b l -m l -p 13
+    class main
+    user root
+    group radio cache inet misc audio sdcard_r sdcard_rw log shell
+
+on property:ro.debug_level=0x494d
+	write /d/tracing/buffer_size_kb 1408
+        write /d/tracing/events/modem_if/mif_log/enable 1
+        write /d/tracing/tracing_on 1
+        write /sys/module/modem_utils/parameters/dflags 13

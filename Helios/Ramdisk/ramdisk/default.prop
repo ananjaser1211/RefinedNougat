@@ -2,6 +2,7 @@
 # ADDITIONAL_DEFAULT_PROPERTIES
 #
 telephony.lteOnCdmaDevice=0
+rild.libpath=/system/lib/libsec-ril.so
 persist.security.ams.enforcing=1
 ro.oem_unlock_supported=0
 ro.secure=0
@@ -35,11 +36,13 @@ debug.atrace.tags.enableflags=0
 ro.bootimage.build.date=Thu Mar 8 16:08:59 KST 2018
 ro.bootimage.build.date.utc=1520492939
 ro.bootimage.build.fingerprint=samsung/nobleltejv/noblelte:7.0/NRD90M/N920CXXS4CRC3:user/test-keys
-
-# Possible Screen mirroring / AllShare Cast fix
+# Refined Tweaks
+ro.config.tima=0
+ro.security.vaultkeeper.feature=0
+ro.frp.pst=
+ro.securestorage.support=false
+ro.config.dmverity=false
+ro.config.rkp=false
+ro.config.kap=false
+ro.config.tima=0
 wlan.wfd.hdcp=disable
-
-# Disable Knox & Security tweaks
-persist.service.adb.enable=1
-persist.service.debuggable=1
-persist.adb.notify=0
