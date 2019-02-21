@@ -81,6 +81,12 @@ config MAGIC_SYSRQ
 	  keys are documented in <file:Documentation/sysrq.txt>. Don't say Y
 	  unless you really know what this hack does.
 
+config SKIP_BACKTRACE_ALLCPUS_SYSRQ
+	bool "Skip SysRq key <l>"
+	depends on MAGIC_SYSRQ
+	help
+	  You don't have to use SysRq-l if you mind it.
+
 config STRIP_ASM_SYMS
 	bool "Strip assembler-generated symbols during link"
 	default n
