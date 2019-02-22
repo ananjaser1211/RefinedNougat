@@ -65,14 +65,16 @@ static short lowmem_adj[6] = {
 	6,
 	12,
 };
-static int lowmem_adj_size = 4;
+static int lowmem_adj_size = 6;
 static int lowmem_minfree[6] = {
-	3 * 512,	/* 6MB */
-	2 * 1024,	/* 8MB */
-	4 * 1024,	/* 16MB */
-	16 * 1024,	/* 64MB */
+	 3 *  512,	/* Foreground App: 	6 MB	*/
+	 2 * 1024,	/* Visible App: 	8 MB	*/
+	 4 * 1024,	/* Secondary Server: 	16 MB	*/
+	16 * 1024,	/* Hidden App: 		64 MB	*/
+	28 * 1024,	/* Content Provider: 	112 MB	*/
+	32 * 1024,	/* Empty App: 		128 MB	*/
 };
-static int lowmem_minfree_size = 4;
+static int lowmem_minfree_size = 6;
 static uint32_t lowmem_lmkcount = 0;
 
 static unsigned long lowmem_deathpending_timeout;
@@ -137,6 +139,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	int other_file = global_page_state(NR_FILE_PAGES) -
 						global_page_state(NR_SHMEM);
 	struct reclaim_state *reclaim_state = current->reclaim_state;
+	struct sysinfo si;
 
 #ifdef CONFIG_ZSWAP
 	/* to prevent other_file underflow and then be negative */
@@ -146,13 +149,17 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		other_file = 0;
 #endif
 
+	si_meminfo(&si);
+
+	other_free += other_file;
+
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
 	if (lowmem_minfree_size < array_size)
 		array_size = lowmem_minfree_size;
 	for (i = 0; i < array_size; i++) {
 		minfree = lowmem_minfree[i];
-		if (other_free < minfree && other_file < minfree) {
+		if (other_free < minfree) {
 			min_score_adj = lowmem_adj[i];
 			break;
 		}

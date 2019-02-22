@@ -1,7 +1,7 @@
 #
 # Makefile for the Linux network device drivers.
 #
-
+subdir-ccflags-y := -Os
 #
 # Networking Core Drivers
 #

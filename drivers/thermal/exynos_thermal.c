@@ -165,14 +165,14 @@ static unsigned int COLD_TEMP = 19;
 static unsigned int HOT_NORMAL_TEMP = 95;
 static unsigned int HOT_CRITICAL_TEMP = 110;
 
-static unsigned int MIF_TH_TEMP1 = 85;
-static unsigned int MIF_TH_TEMP2 = 95;
+static unsigned int MIF_TH_TEMP1 = 95;
+static unsigned int MIF_TH_TEMP2 = 100;
 
-static unsigned int GPU_TH_TEMP1 = 75;
-static unsigned int GPU_TH_TEMP2 = 80;
-static unsigned int GPU_TH_TEMP3 = 85;
-static unsigned int GPU_TH_TEMP4 = 90;
-static unsigned int GPU_TH_TEMP5 = 95;
+static unsigned int GPU_TH_TEMP1 = 80;
+static unsigned int GPU_TH_TEMP2 = 85;
+static unsigned int GPU_TH_TEMP3 = 90;
+static unsigned int GPU_TH_TEMP4 = 95;
+static unsigned int GPU_TH_TEMP5 = 100;
 
 module_param_named(tmu_cpu_cold, COLD_TEMP, uint, S_IWUSR | S_IRUGO);
 module_param_named(tmu_cpu_normal, HOT_NORMAL_TEMP, uint, S_IWUSR | S_IRUGO);
