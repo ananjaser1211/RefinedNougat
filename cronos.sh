@@ -33,8 +33,8 @@ CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Ramdisk/split-img
 CR_RAMDISK_MAIN=$CR_DIR/Helios/Ramdisk
 # Kernel Name and Version
-CR_VERSION=V1.0
-CR_NAME=HeliosLite_Kernel
+CR_VERSION=V2.0
+CR_NAME=HeliosLite
 # Thread count
 CR_JOBS=9
 # Target android version and platform (7/n/8/o)
@@ -95,23 +95,31 @@ else
      rm -rf $CR_DTS/*.dtb          
 fi
 
-#read -p "Extended Battery Support (y/n) > " yn
-#if [ "$yn" = "Y" -o "$yn" = "y" ]; then
-#     echo "ZeroLemon battery"    
-#     cp drivers/battery/max77843_fuelgauge_ZL.c drivers/battery/max77843_fuelgauge.c  
-#else
-#     echo "Stock Battery"
-#     cp drivers/battery/max77843_fuelgauge_ST.c drivers/battery/max77843_fuelgauge.c     
-#fi
+read -p "Extended Battery Support (y/n) > " yn
+if [ "$yn" = "Y" -o "$yn" = "y" ]; then
+     echo "ZeroLemon battery"    
+     cp drivers/battery/max77843_fuelgauge_ZL.c drivers/battery/max77843_fuelgauge.c
+     export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-ZeroLemon-$CR_DATE
+echo -n "ZeroLemon" >> $CR_DIR/zl.txt
+else
+     echo "Stock Battery"
+     cp drivers/battery/max77843_fuelgauge_ST.c drivers/battery/max77843_fuelgauge.c
+     export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE
+rm -rf $CR_DIR/zl.txt
+fi
 
 BUILD_ZIMAGE()
 {
 	echo "----------------------------------------------"
 	echo " "
 	echo "Building zImage for $CR_VARIANT"
-	export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE
 	make  $CR_CONFG
 	make -j$CR_JOBS
+	if [ ! -e ./arch/arm/boot/zImage ]; then
+	exit 0;
+	echo "zImage Failed to Compile"
+	echo " Abort "
+	fi
 	echo " "
 	echo "----------------------------------------------"
 }
@@ -133,6 +141,7 @@ BUILD_DTB()
 	rm -rf $CR_DTS/.*.cmd
 	rm -rf $CR_DTS/*.dtb
 	echo " "
+	rm -rf drivers/battery/max77843_fuelgauge.c
 	echo "----------------------------------------------"
 }
 PACK_BOOT_IMG()
@@ -160,7 +169,12 @@ PACK_BOOT_IMG()
     # Remove red warning at boot
 	echo -n "SEANDROIDENFORCE" » $CR_AIK/image-new.img
     # Move boot.img to out dir
-	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_DATE-$CR_VARIANT.img
+	if [ ! -e $CR_DIR/zl.txt ]; then
+	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE.img
+	fi
+	if [ -e $CR_DIR/zl.txt ]; then
+	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_VARIANT-ZeroLemon-$CR_DATE.img
+	fi
     # Cleanup A.I.K Workspace
     echo " "
 	$CR_AIK/cleanup.sh

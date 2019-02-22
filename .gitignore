@@ -99,3 +99,4 @@ scripts/kallsyms
 scripts/pnmtologo
 scripts/sortextable
 Helios/out/*.img
+zl.txt
