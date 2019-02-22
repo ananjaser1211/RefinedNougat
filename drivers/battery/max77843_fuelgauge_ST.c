@@ -32,6 +32,7 @@ static enum power_supply_property max77843_fuelgauge_props[] = {
 #if defined(CONFIG_EN_OOPS)
 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
 #endif
+	POWER_SUPPLY_PROP_ENERGY_FULL,
 };
 
 #if !defined(CONFIG_SEC_FACTORY)
@@ -1535,6 +1536,9 @@ static int max77843_fg_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
 		break;
 #endif
+	case POWER_SUPPLY_PROP_ENERGY_FULL:
+		val->intval = get_fuelgauge_value(fuelgauge, FG_FULLCAP) * 100	/ fuelgauge->battery_data->Capacity;
+		break;
 	default:
 		return -EINVAL;
 	}
