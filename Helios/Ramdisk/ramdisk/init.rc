@@ -1455,6 +1455,22 @@ service SIDESYNC_service /system/bin/ss_conn_daemon
     user system
     group inet net_raw
 
+# for RIL MFG (TestMode)
+service DR-daemon /system/bin/ddexe
+    class main
+    user root
+    group system radio inet net_raw
+
+service SMD-daemon /system/bin/smdexe
+    class main
+    user root
+    group system radio inet net_raw
+
+service BCS-daemon /system/bin/connfwexe
+    class main
+    user root
+    group system radio inet net_raw
+
 ## WTL_EDM_START
 ## EDM AuditLog
 service edmaudit /system/bin/edmaudit
@@ -1532,6 +1548,28 @@ on property:ro.debuggable=1
     # The folder is used to store method traces.
     chmod 0773 /data/misc/trace
     start console
+
+# RIL
+service ril-daemon /system/bin/rild
+    class main
+    socket rild stream 660 root radio
+    socket sap_uim_socket1 stream 660 bluetooth bluetooth
+    socket rild-debug stream 660 radio system
+#FSI {Tmm] Add Start (120615)
+    socket rild-cas stream 660  casdrm mmb
+#FSI {Tmm] Add End (120615)
+    user root
+    group radio cache inet misc audio sdcard_r sdcard_rw log vpn system
+    onrestart restart cpboot-daemon
+on property:persist.sys.cpboot=disable
+    stop ril-daemon
+    stop cpboot-daemon
+
+# AT Distributor for factory test
+service at_distributor /system/bin/at_distributor
+    class late_start
+    user root
+    group radio misc log
 
 # Disable Samsung RMM State trigger
 # service vaultkeeperd /system/bin/vaultkeeperd

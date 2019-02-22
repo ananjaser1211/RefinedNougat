@@ -463,6 +463,8 @@ on fs
 
 # MIF
     chown radio radio /sys/devices/virtual/misc/multipdp/waketime
+    chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
+    chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state
 
 # for datarouter
     chown system system /dev/dun
@@ -727,6 +729,10 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     chown system system /sys/class/mdnie/mdnie/mdnie_ldu
     chwon system system /sys/class/mdnie/mdnie/scenario
 
+# permission for IPSec
+    chown root system /dev/socket
+    chmod 0775 /dev/socket
+
 # Copy DRM Key
     copy /system/app/wv.keys /factory/wv.keys
 
@@ -846,6 +852,12 @@ service at_distributor /system/bin/at_distributor
     class late_start
     user root
     group radio misc log
+
+# Modem Logging daemon
+service ML-daemon /system/bin/mlexe
+    class main
+    user root
+    group system radio inet net_raw
 
 # IPSec for VOLTE
 service ipsec-daemon /system/bin/IPSecService

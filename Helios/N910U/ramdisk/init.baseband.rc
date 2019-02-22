@@ -22,15 +22,11 @@ on fs
     chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
     chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state
 
-start cpboot-daemon
-
+# CP Boot Daemon (CBD)
 service cpboot-daemon /sbin/cbd -d -t xmm72xx_lli -b l -m l -p 13
     class main
     user root
     group radio cache inet misc audio sdcard_r sdcard_rw log shell
-
-on property:ro.debug_level=0x494d
-	write /d/tracing/buffer_size_kb 1408
-        write /d/tracing/events/modem_if/mif_log/enable 1
-        write /d/tracing/tracing_on 1
-        write /sys/module/modem_utils/parameters/dflags 13
+    seclabel u:r:cbd:s0
+on property:persist.sys.cpboot=disable
+    stop cpboot-daemon
