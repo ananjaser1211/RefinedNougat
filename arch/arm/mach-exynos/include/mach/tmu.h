@@ -18,6 +18,7 @@
 #define TMU_SAVE_NUM 10
 #define TMU_DC_VALUE 25
 #define UNUSED_THRESHOLD 0xFF
+#define COLD_TEMP		19
 
 enum tmu_status_t {
 	TMU_STATUS_INIT = 0,
