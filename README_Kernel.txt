@@ -1,24 +1,24 @@
 ################################################################################
 
-HOW TO BUILD KERNEL 
-
 1. How to Build
 	- get Toolchain
-	download and install arm-eabi-4.7 toolchain for ARM EABI.
-	Extract kernel source and move into the top directory.
+		From android git server , codesourcery and etc ..
+		 - aarch64-linux-android-4.9
+		
+	- edit Makefile
+		edit "CROSS_COMPILE" to right toolchain path(You downloaded).
+		  EX)  CROSS_COMPILE= $(android platform directory you download)/android/prebuilts/gcc/linux-x86/aarch/aarch-linux-android-4.9/bin/aarch-linux-android- (common_build_conf.zeroflte)
+	
+  	
+        - to Build
+          $ make trelte_00_defconfig
+          $ make -j64
 
-	$ make gts28lte_03_defconfig
-	$ make -j64	
-	
 2. Output files
-	- Kernel : Kernel/arch/arm/boot/zImage
-	- module : Kernel/drivers/*/*.ko
-	
+	- Kernel : arch/arm/boot/zImage
+	- module : drivers/*/*.ko
+
 3. How to Clean	
-    $ make clean
-	
-4. How to make .tar binary for downloading into target.
-	- change current directory to Kernel/arch/arm/boot
-	- type following command
-	$ tar cvf SM-A300HQ_MEA_LL_JT.tar zImage
+		$ make clean
+		
 ################################################################################
