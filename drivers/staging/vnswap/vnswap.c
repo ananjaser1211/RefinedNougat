@@ -58,6 +58,12 @@ static DEFINE_SPINLOCK(vnswap_original_bio_lock);
 void vnswap_init_disksize(u64 disksize)
 {
 	int i;
+
+	if ((vnswap_device->init_success & VNSWAP_INIT_DISKSIZE_SUCCESS) != 0x0) {
+		pr_err("%s %d: disksize is already initialized (disksize = %llu)\n",
+				__func__, __LINE__, vnswap_device->disksize);
+		return;
+	}
 	vnswap_device->disksize = PAGE_ALIGN(disksize);
 	if ((vnswap_device->disksize/PAGE_SIZE > MAX_SWAP_AREA_SIZE_PAGES) ||
 		!vnswap_device->disksize) {
@@ -122,9 +128,8 @@ int vnswap_init_backing_storage(void)
 		pr_err("%s %d: filp_open failed" \
 				"(backing_storage_file, error, " \
 				"backing_storage_filename)" \
-				" = (0x%08x, 0x%08x, %s)\n",
+				" = (0x%08x, %s)\n",
 				__func__, __LINE__,
-				(unsigned int) backing_storage_file,
 				ret, vnswap_device->backing_storage_filename);
 		goto error;
 	} else {
@@ -132,9 +137,8 @@ int vnswap_init_backing_storage(void)
 		vnswap_device->stats.vnswap_backing_storage_open_fail = 0;
 		dprintk("%s %d: filp_open success" \
 				"(backing_storage_file, error, backing_storage_filename)"
-				"= (0x%08x, 0x%08x, %s)\n",
+				"= (0x%08x, %s)\n",
 				__func__, __LINE__,
-				(unsigned int) backing_storage_file,
 				ret, vnswap_device->backing_storage_filename);
 	}
 
@@ -186,14 +190,15 @@ int vnswap_init_backing_storage(void)
 	*/
 	if (vnswap_device->bs_size % (sizeof(unsigned long)*8) != 0) {
 		dprintk("%s %d: backing storage size is misaligned " \
-				"(32 page align)." \
+				"(%d page align)." \
 				"So, it is truncated from %llu pages to %llu pages\n",
-				__func__, __LINE__, vnswap_device->bs_size,
-				vnswap_device->bs_size /
-				(sizeof(unsigned long)*8)*
-				(sizeof(unsigned long)*8));
-		vnswap_device->bs_size = (vnswap_device->bs_size /
-			(sizeof(unsigned long)*8) * (sizeof(unsigned long)*8));
+				__func__, __LINE__,
+				sizeof(unsigned long) * 8,
+				vnswap_device->bs_size,
+				vnswap_device->bs_size / ((sizeof(unsigned long) * 8) * 
+					(sizeof(unsigned long) * 8)));
+		vnswap_device->bs_size = vnswap_device->bs_size /
+		((sizeof(unsigned long) * 8) * (sizeof(unsigned long) * 8));
 	}
 
 	backing_storage_bitmap = vmalloc(vnswap_device->bs_size / 8);
@@ -202,7 +207,7 @@ int vnswap_init_backing_storage(void)
 		goto close_file;
 	}
 
-	for (i = 0; i < vnswap_device->bs_size / 32; i++)
+	for (i = 0; i < vnswap_device->bs_size / (8 * sizeof(unsigned long)); i++)
 		backing_storage_bitmap[i] = 0;
 	backing_storage_bitmap_last_allocated_index = -1;
 
@@ -219,7 +224,8 @@ int vnswap_init_backing_storage(void)
 			pr_err("%s %d: backing_storage file has holes." \
 					"(probe_block, first_block) = (%llu,%llu)\n",
 					__func__, __LINE__,
-					probe_block, first_block);
+					(unsigned long long) probe_block,
+					(unsigned long long) first_block);
 			ret = -EINVAL;
 			goto free_bmap;
 		}
@@ -781,7 +787,8 @@ void __vnswap_make_request(struct vnswap *vnswap,
 		pr_err("%s %d: invalid offset. " \
 				"(bio->bi_sector, index, offset," \
 				"vnswap_bio_invalid_num) = (%llu, %d, %d, %d)\n",
-				__func__, __LINE__, bio->bi_sector,
+				__func__, __LINE__,
+				(unsigned long long) bio->bi_sector,
 				index, offset,
 				vnswap_device->stats.
 					vnswap_bio_invalid_num.counter);
@@ -891,8 +898,8 @@ void vnswap_make_request(struct request_queue *queue, struct bio *bio)
 				"vnswap->disksize, vnswap_bio_invalid_num) = " \
 				"(%llu, %d, %llu, %d)\n",
 				__func__, __LINE__,
-				bio->bi_sector, bio->bi_size,
-				vnswap->disksize,
+				(unsigned long long) bio->bi_sector,
+				bio->bi_size, vnswap->disksize,
 				vnswap_device->stats.
 					vnswap_bio_invalid_num.counter);
 		goto error;
@@ -921,6 +928,12 @@ void vnswap_slot_free_notify(struct block_device *bdev, unsigned long index)
 			vnswap_not_mapped_slot_free_num);
 		spin_unlock(&vnswap_table_lock);
 		return;
+	}
+
+	if (unlikely(!backing_storage_bitmap)) {
+		pr_err("%s %d: invalid request - index=%lu\n",
+					__func__, __LINE__, index);
+		BUG();
 	}
 
 	atomic_inc(&vnswap_device->stats.
