@@ -1,13 +1,17 @@
-import init.universal5433.usb.rc
+import init.samsungexynos5433.usb.rc
+import init.baseband.rc
+import init.carrier.rc
 import init.wifi.rc
 import init.fac.rc
-import init.carrier.rc
-import init.baseband.rc
 
 on early-init
+    mkdir /efs 0771 radio system
+    mkdir /cpefs 0771 radio system
     mount debugfs /sys/kernel/debug /sys/kernel/debug
 
 on init
+    start watchdogd
+
     mkdir /preload 0771 system system
 
     export LD_SHIM_LIBS "/system/lib/libexynoscamera.so|libcamera_shim.so:/system/lib/hw/gps.universal5433.so|libshim_gpsd.so:/system/bin/gpsd|libshim_gpsd.so"
@@ -64,7 +68,11 @@ on init
 on post-fs-data
     mkdir /data/media 0770 media_rw media_rw
 
-    setprop vold.post_fs_data_done 1
+#SystemFramework
+    chown system system /data/cache/backup
+    chmod 0711 /data/cache/backup
+    chown system system /data/cache/backup_stage
+    chmod 0711 /data/cache/backup_stage
 
     # Permissions Camera
     mkdir /data/camera 0770 media system
@@ -116,6 +124,12 @@ on post-fs-data
     rm /data/system/gps/beidou_started
     rm /data/system/gps/smd_started
     rm /data/system/gps/sv_cno.info
+    
+    setprop vold.post_fs_data_done 1
+    
+# /efs/factory.prop for Dual / Single SIM settings
+    chown radio radio /efs/factory.prop
+    chmod 0600 /efs/factory.prop
 
 # SVC LED
     chown system system /sys/class/sec/led/led_r
@@ -145,6 +159,20 @@ on post-fs-data
     chown media system /data/firmware
 
 on boot
+    # override init.rc to keep plenty of large order chunks around
+    # to improve allocation times
+#    write /proc/sys/vm/min_free_kbytes 32768
+#    write /proc/sys/vm/min_free_order_shift 1
+
+# SSWAP
+    write /proc/sys/vm/swappiness 130
+
+#    mount debugfs /sys/kernel/debug /sys/kernel/debug
+    # Allow to access debugfs for system:system
+	chmod 755 /sys/kernel/debug
+    chown system system /sys/kernel/debug
+#   setprop ro.radio.noril yes
+
     # Ensure all CPUs are online (big cluster)
     write /sys/devices/system/cpu/cpu4/online 1
 
@@ -441,7 +469,7 @@ on boot
     write /proc/sys/net/ipv4/tcp_adv_win_scale  2
 
 on fs
-    mount_all /fstab.universal5433
+    mount_all /fstab.samsungexynos5433
     setprop ro.crypto.fuse_sdcard true
 
 # Support Preload install apks
@@ -588,6 +616,9 @@ on fs
     chown system radio /sys/class/sensors/accelerometer_sensor/name
     chown system radio /sys/class/sensors/accelerometer_sensor/selftest
     chown system radio /sys/class/sensors/accelerometer_sensor/lowpassfilter
+    chown system system /efs/calibration_data
+    chmod 0666 /efs/calibration_data
+
 # Proximity_sensor
     chown system radio /sys/class/sensors/proximity_sensor/state
     chown system radio /sys/class/sensors/proximity_sensor/raw_data
@@ -599,11 +630,14 @@ on fs
     chown system radio /sys/class/sensors/proximity_sensor/thresh_low
     chown system radio /sys/class/sensors/proximity_sensor/barcode_emul_en
     chown system radio /sys/class/sensors/proximity_sensor/prox_offset_pass
+    chown system radio /sys/class/sensors/proximity_sensor/prox_trim
+
 # Light_sensor
     chown system radio /sys/class/sensors/light_sensor/lux
     chown system radio /sys/class/sensors/light_sensor/raw_data
     chown system radio /sys/class/sensors/light_sensor/vendor
     chown system radio /sys/class/sensors/light_sensor/name
+
 # Gyro_sensor
     chown system radio /sys/class/sensors/gyro_sensor/power_on
     chown system radio /sys/class/sensors/gyro_sensor/power_off
@@ -755,6 +789,7 @@ service lhd /system/bin/lhd /system/etc/lhd.conf
     chown system system /sys/class/sec/led/led_pattern
     chown system system /sys/class/sec/led/led_blink
     chown system system /sys/class/sec/led/led_lowpower
+    chown system system /sys/class/sec/led/led_pattern
 
 # SVC LED common
     chown system system /sys/class/leds/led_r/brightnes
@@ -792,6 +827,45 @@ on property:ro.debuggable=1
     chmod 0666 /sys/class/mhl/test_v2
     chmod 0666 /sys/class/mhl/connection
 
+# Permissions Camera
+    mkdir /data/camera 0770 cameraserver system
+    chown system radio /sys/class/camera/rear/rear_camfw
+    chown system radio /sys/class/camera/rear/rear_camfw_full
+    chown system radio /sys/class/camera/rear/rear_checkfw_user
+    chown system radio /sys/class/camera/rear/rear_checkfw_factory
+    chown system radio /sys/class/camera/rear/rear_sensor_standby
+    chown system radio /sys/class/camera/rear/rear_camtype
+    chown system radio /sys/class/camera/rear/rear_companionfw
+    chown system radio /sys/class/camera/rear/rear_companionfw_full
+    chown system radio /sys/class/camera/rear/rear_calcheck
+    chown system radio /sys/class/camera/rear/rear_caminfo
+    chown system radio /sys/class/camera/rear/rear_sensorid
+    chown system radio /sys/class/camera/rear/from_write
+    chown system radio /sys/class/camera/rear/isp_core
+    chown system radio /sys/class/camera/rear/fw_update
+    chown system radio /sys/class/camera/rear/rear_moduleid
+    chown system system /sys/class/camera/rear/rear_hwparam
+    chown system radio /sys/class/camera/flash/rear_flash
+    chown system radio /sys/class/camera/flash/front_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/front_torch_flash
+    chown system radio /sys/class/camera/front/front_camfw
+    chown system radio /sys/class/camera/front/front_camfw_full
+    chown system radio /sys/class/camera/front/front_checkfw_factory
+    chown system radio /sys/class/camera/front/front_camtype
+    chown system radio /sys/class/camera/front/front_moduleid
+    chown system radio /sys/class/camera/front/front_caminfo
+    chown system radio /sys/class/camera/front/front_sensorid
+    chown system system /sys/class/camera/front/front_hwparam
+    chown system radio /sys/class/camera/ois/selftest
+    chown system radio /sys/class/camera/ois/ois_power
+    chown system radio /sys/class/camera/ois/ois_rawdata
+    chown system radio /sys/class/camera/ois/oisfw
+    chown system radio /sys/class/camera/ois/ois_diff
+    chown system radio /sys/class/camera/ois/fw_update
+    chown system radio /sys/class/camera/ois/ois_exif
+    chown system system /sys/devices/svc/Camera/SVC_rear_module
+    chown system system /sys/devices/svc/Camera/SVC_front_module
 
 
 # ARGOSD
@@ -799,93 +873,42 @@ service argos-daemon /system/bin/argosd
     class main
     user system
     group system radio
-
-# SecEDS
-service TvoutService_C /system/bin/bintvoutservice
-    class main
-    user system
-    group graphics
-on property:ro.SecEDS.enable=false
-    stop TvoutService_C
-
-# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
-service watchdogd /sbin/watchdogd 10 20
-    class core
-    seclabel u:r:watchdogd:s0
-    disabled
-
-# Kick watchdogd if debug_level is low
-on property:ro.debug_level=0x4f4c
-    start watchdogd
-
-on property:sys.boot_completed=1
-    write /proc/sys/vm/dirty_bytes 31457280
-    write /proc/sys/vm/dirty_background_bytes 15728640
-
-service prepare_param /system/bin/prepare_param.sh /dev/block/platform/15540000.dwmmc0/by-name/PARAM
-    class core
-    user root
-    group root
-    seclabel u:r:prepare_param:s0
-    oneshot
-
-# on userdebug and eng builds, enable kgdb on the serial console
-on property:ro.debuggable=1
-    write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
-    write /sys/module/fiq_debugger/parameters/kgdb_enable 1
-
-# ITP mode enter/exit
-on property:ril.cbd.modechan=0
-    restart ril-daemon
-
-on property:ril.cbd.modechan=2
-    restart ril-daemon
-
-# AT Distributor for factory test
-service at_distributor /system/bin/at_distributor
-    class late_start
-    user root
-    group radio misc log
-
-# IPSec for VOLTE
-service ipsec-daemon /system/bin/IPSecService
-    class main
-    socket ipsec_socket stream 660 system system
-    user system
-    group system net_raw inet net_admin
-
-# SENSOR FRAMEWORK : starts fingerprintService
-service vcsFPService /system/bin/vcsFPService
-    class late_start
-    user system
-    group system
-
-# LPM
-on property:ro.bootmode=charger
-    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM /system wait ro
-
-on property:ro.bootmode=charger
-    wait /dev/block/platform/15540000.dwmmc0/by-name/EFS
-    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
-
-on property:ro.bootmode=charger
-    class_start sec-charger
-
+	
 # GPS
-service gpsd /system/bin/gpsd -c /system/etc/gps.xml
+service gpsd /system/bin/gpsd
     class main
     user gps
-    group system inet net_raw wakelock
+    group system inet wakelock
     ioprio be 0
     seclabel u:r:gpsd:s0
 
-# SENSOR FRAMEWORK : starts fingerprintService
-service vcsFPService /system/bin/vcsFPService
-    class late_start		
-    user system		
-    group system
+# LPM
+service lpm /system/bin/lpm
+    class sec-charger
+    critical
 
-# FINGERPRINT FRAMEWORK : starts fingerprintd		
+on property:ro.bootmode=charger
+   mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM /system wait ro
+
+on property:ro.bootmode=charger
+    wait /dev/block/platform/15540000.dwmmc0/by-name/EFS
+    check_fs /dev/block/platform/15540000.dwmmc0/by-name/EFS ext4
+    mount ext4 /dev/block/platform/15540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
+
+on property:ro.bootmode=charger
+   class_start sec-charger
+
+on property:sys.mobicoredaemon.enable=true
+    start cs_service
+    write /proc/iccc_ready 1
+
+on property:ro.multisim.simslotcount=1
+    setprop persist.radio.multisim.config ss
+
+on property:ro.multisim.simslotcount=2
+    setprop persist.radio.multisim.config dsds
+
+# FINGERPRINT FRAMEWORK : starts fingerprintd
 service fingerprintd /system/bin/fingerprintd
     class late_start
     user system
@@ -897,41 +920,45 @@ service faced /system/bin/faced
     user system
     group system
 
-# DRK/CS service
-service cs_service /system/bin/cs
+# VC daemon
+    service VC-daemon /system/bin/vcd
     class main
-    user system
+    user root
     group system
+
+service fuse_sdcard /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/sdcard /storage/sdcard
+    class late_start
+    disabled
+service fuse_usb1 /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/usb1 /storage/usb1
+    class late_start
     disabled
 
-on property:sys.mobicoredaemon.enable=true
-    start cs_service
-    write /proc/iccc_ready 1
-
-# for ethernet
-service dhcpcd_eth0 /system/bin/dhcpcd -ABKL
+# IPSec for VOLTE
+service ipsec-daemon /system/bin/IPSecService
     class main
-    disabled
-    oneshot
+    socket ipsec_socket stream 660 system net_admin
+    user system
+    group system net_raw inet net_admin
 
-# SSWAP
-service swapon /sbin/sswap -s -f 1536
+# Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
+service watchdogd /sbin/watchdogd 10 20
+    class core
+    seclabel u:r:watchdogd:s0
+
+# on userdebug and eng builds, enable kgdb on the serial console
+on property:ro.debuggable=1
+    write /sys/module/kgdboc/parameters/kgdboc ttyFIQ1
+    write /sys/module/fiq_debugger/parameters/kgdb_enable 1
+
+service prepare_param /system/bin/prepare_param.sh /dev/block/platform/15540000.dwmmc0/by-name/PARAM
     class core
     user root
     group root
-    seclabel u:r:sswap:s0
-    oneshot
-
-# RTC logging daemon
-service rtc_log /system/bin/rtc_log.sh
-    class main
-    user system
-    group system
-    seclabel u:r:rtc_log:s0
+    seclabel u:r:prepare_param:s0
     oneshot
 
 # umount service
-service umount_service /system/bin/umount /preload
+service umount_service /system/bin/umount -D /preload
     disabled
     oneshot
 
@@ -953,6 +980,22 @@ on property:persist.sys.storage_preload=1
 on property:persist.sys.storage_preload=0
     start umount_service
 
-# Reactivation lock
-service reactived /system/bin/reactived
-    class late_start
+# SSWAP
+service swapon /sbin/sswap -s -f 1536
+    class core
+    user root
+    group root
+    seclabel u:r:sswap:s0
+    oneshot
+
+# WSM service startup
+service wsmd /system/bin/wsmd
+    class core
+    user system
+    group system
+    disabled
+on property:ro.wsmd.enable=true
+    mkdir /dev/socket/wsm_socket 
+    chmod 0711 /dev/socket/wsm_socket
+    chown system system /dev/socket/wsm_socket
+    start wsmd

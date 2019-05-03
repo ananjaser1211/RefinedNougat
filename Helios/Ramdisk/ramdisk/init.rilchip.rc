@@ -13,15 +13,6 @@ service ril-daemon /system/bin/rild
     group radio cache inet misc audio sdcard_r sdcard_rw log vpn system readproc
     onrestart restart cpboot-daemon
 
-service ril-daemon1 /system/bin/rild -c 2
-    class main
-    socket rild2 stream 660 root radio
-    socket rild-debug2 stream 660 radio system
-    user root
-    group radio cache inet misc audio sdcard_r sdcard_rw log vpn system readproc
-    disabled
-    onrestart restart cpboot-daemon
-
 on property:persist.sys.cpboot=disable
     stop ril-daemon
     stop cpboot-daemon
@@ -37,8 +28,20 @@ service DIAG-daemon /system/bin/diagexe
     user root
     group system radio inet net_raw
 
+# LSI CDMA project daemon support dun function
+service VC-daemon /system/bin/vcd
+    class main
+    user root
+    group system
+    disabled
+    seclabel u:r:vcd:s0
+
+on property:telephony.lteOnCdmaDevice=1
+    start VC-daemon
+
 on early-boot
 # Assign TCP buffer thresholds to be ceiling value of technology maximums
 # Increased technology maximums should be reflected here.
     write /proc/sys/net/core/rmem_max 2097152
     write /proc/sys/net/core/wmem_max 2097152
+
